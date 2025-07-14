@@ -1,3 +1,45 @@
+<!-- <script setup>
+   
+   import { onMounted, ref } from 'vue'
+   import {getPagedBranchesListAPI} from '@/apis/branch'
+
+   //分页组件的当前页号
+   const currentPage = ref(1);
+   const pageSize = ref(10);
+   const small = ref(false);
+   const background = ref(false);
+   const disabled = ref(false);
+
+   //当前访问的页面发生的改变的时候触发
+   const handleCurrentChange = (val) => {
+    console.log(`current page: ${val}`)
+   }
+
+   const setCurrentPageNo = (pageNo)=>{
+    currPageNo.value = pageNo;
+    // console.log("list.vue",pageNo,currPageNo.value);
+    loadPagedBranches(pageNo);
+  }
+
+   const props = defineProps({
+      psize:{
+         type:Number,
+         default:10
+      },
+      total:{
+         type:Number,
+         default:100
+      }
+   });
+
+   const emit = defineEmits(['setCurrentPageNo']);
+
+  onMounted(()=>{
+    loadPagedBranches(1);
+  });
+
+</script> -->
+
 <template>
     <div class="branch">
         <div class="wrapper">
@@ -29,7 +71,11 @@
              </div> -->
              <div class="table-container">
                  <el-table
-                     :data="tableData" border style="width: 100%" :header-row-style="{color:'#555',textAlign:'center'}">
+                     :data="tableData"
+                     border
+                     style="width: 100%"
+                     :header-row-style="{color:'#555',textAlign:'center'}"
+                     @selection-change="handleSelectionChange">
                      <el-table-column type="selection" width="55" />
                      <el-table-column prop="id" label="编号" width="180" />
                      <el-table-column prop="name" label="分店名称" width="200" />
@@ -46,29 +92,32 @@
                                  删除
                              </el-button>
                          </template> -->
-                         <template #default="scope">
-                              <el-button size="small" type="warning" @click="handleEdit(scope.$index, scope.row)" :icon="EditPen">修 改</el-button>
-                              <el-button size="small" type="danger" @click="delGoodsDlg.open(scope.row)" :icon="Delete">删 除</el-button>
+                         <template #default="{ row }">
+                             <el-button type="warning" size="small" @click="handleEdit(row)">
+                                 修改
+                             </el-button>
+                             <el-button type="danger" size="small" @click="handleDelete(row)">
+                                 删除
+                             </el-button>
                          </template>
                      </el-table-column>
                  </el-table>
-                 <div class="page">
-                      <Page :psize="pageSize" :total="total" @setCurrentPageNo="setCurrentPageNo"></Page>
-                </div>
             </div>
-            <DelGoodsDlg ref="delGoodsDlg" @update-view="reloadGoods()"></DelGoodsDlg>
 
                  <!-- 分页 -->
                  <div class="pagination-container">
                      <el-pagination
-                         v-model:current-page="pagination.currentPage"
-                         v-model:page-size="pagination.pageSize"
-                         :page-sizes="[10, 20, 50, 100]"
-                         :total="pagination.total"
-                         layout="total, prev, pager, next, jumper"
-                         @size-change="handleSizeChange"
-                         @current-change="handleCurrentChange"
-                     />
+                        v-model:current-page="currentPage"
+                        v-model:page-size="pageSize"
+                        :small="small"
+                        :disabled="disabled"
+                        :background="background"
+                        layout="total, sizes, prev, pager, next, jumper"
+                        :page-sizes="[10, 20, 50, 100]"
+                        :total="total"
+                        @current-change="setCurrentPageNo"
+                        @size-change="handleSizeChange"
+                    />
                  </div>
              </div>
         </div>
@@ -118,7 +167,45 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAllBranchAPI, addBranchAPI, updateBranchAPI, deleteBranchAPI } from '@/apis/branch'
+// import { getAllBranchAPI, addBranchAPI, updateBranchAPI, deleteBranchAPI } from '@/apis/branch'
+   import {getPagedBranchesListAPI} from '@/apis/branch'
+
+   //分页组件的当前页号
+   const currentPage = ref(1);
+   const currPageNo = ref(1);
+   const pageSize = ref(10);
+   const total = ref(0);
+   const small = ref(false);
+   const background = ref(false);
+   const disabled = ref(false);
+
+   //当前访问的页面发生的改变的时候触发
+   const handleCurrentChange = (val) => {
+    console.log(`current page: ${val}`)
+   }
+
+   const setCurrentPageNo = (pageNo)=>{
+    currPageNo.value = pageNo;
+    console.log("BranchList.vue",pageNo,currPageNo.value);
+    loadPagedBranches(pageNo);
+  }
+
+   const props = defineProps({
+      psize:{
+         type:Number,
+         default:10
+      },
+      total:{
+         type:Number,
+         default:100
+      }
+   });
+
+   const emit = defineEmits(['setCurrentPageNo']);
+
+  onMounted(()=>{
+    loadPagedBranches(1);
+});
 
 // 响应式数据
 const loading = ref(false)
@@ -126,6 +213,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增分店')
 const formRef = ref()
 const selectedRows = ref([])
+const tableData = ref([])
 
 // 搜索表单
 const searchForm = reactive({
@@ -141,90 +229,6 @@ const pagination = reactive({
   pageSize: 10,
   total: 0
 })
-
-// 表格数据 - 模拟酒店分店数据
-const tableData = ref([
-  {
-    id: 997,
-    name: '东海酒店',
-    address: '东海市太行路32号',
-    phone: '067-8321012',
-    roomCount: 105,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 994,
-    name: '西山酒店',
-    address: '西山区建设路88号',
-    phone: '067-8321013',
-    roomCount: 88,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 993,
-    name: '南湖酒店',
-    address: '南湖区湖滨路66号',
-    phone: '067-8321014',
-    roomCount: 120,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 992,
-    name: '北城酒店',
-    address: '北城区商业街99号',
-    phone: '067-8321015',
-    roomCount: 95,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 990,
-    name: '中心酒店',
-    address: '市中心广场东路168号',
-    phone: '067-8321016',
-    roomCount: 150,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 989,
-    name: '滨江酒店',
-    address: '滨江区江滨大道288号',
-    phone: '067-8321017',
-    roomCount: 78,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 988,
-    name: '高新酒店',
-    address: '高新区科技路188号',
-    phone: '067-8321018',
-    roomCount: 110,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 986,
-    name: '开发区酒店',
-    address: '开发区工业路66号',
-    phone: '067-8321019',
-    roomCount: 85,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 985,
-    name: '新区酒店',
-    address: '新区政务路128号',
-    phone: '067-8321020',
-    roomCount: 92,
-    createTime: '2025-07-14 22:05:33'
-  },
-  {
-    id: 982,
-    name: '老城酒店',
-    address: '老城区古街58号',
-    phone: '067-8321021',
-    roomCount: 68,
-    createTime: '2025-07-14 22:05:33'
-  }
-])
 
 // 表单数据
 const formData = reactive({
@@ -255,7 +259,7 @@ const formRules = {
 // 方法
 const handleSearch = () => {
   console.log('搜索', searchForm)
-  loadData()
+  loadPagedBranches(1)
 }
 
 const handleAdd = () => {
@@ -272,7 +276,7 @@ const handleEdit = (row) => {
 
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm('确定要删除这个分店吗？', '提示', {
+    await ElMessageBox.confirm(`确定要删除分店 "${row.name}" 吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -281,7 +285,7 @@ const handleDelete = async (row) => {
     // 这里调用删除API
     // await deleteBranchAPI(row.id)
     ElMessage.success('删除成功')
-    loadData()
+    loadPagedBranches(currPageNo.value)
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败')
@@ -303,7 +307,7 @@ const handleBatchDelete = async () => {
     })
 
     ElMessage.success('批量删除成功')
-    loadData()
+    loadPagedBranches(currPageNo.value)
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('批量删除失败')
@@ -316,14 +320,14 @@ const handleSelectionChange = (selection) => {
 }
 
 const handleSizeChange = (size) => {
-  pagination.pageSize = size
-  loadData()
+  pageSize.value = size
+  loadPagedBranches(currPageNo.value)
 }
 
-const handleCurrentChange = (page) => {
-  pagination.currentPage = page
-  loadData()
-}
+// const handleCurrentChange = (page) => {
+//   pagination.currentPage = page
+//   loadData()
+// }
 
 const handleSubmit = async () => {
   try {
@@ -340,7 +344,7 @@ const handleSubmit = async () => {
     }
 
     dialogVisible.value = false
-    loadData()
+    loadPagedBranches(currPageNo.value)
   } catch (error) {
     console.error('提交失败:', error)
   }
@@ -383,10 +387,34 @@ const loadData = async () => {
   }
 }
 
-// 生命周期
-onMounted(() => {
-  loadData()
-})
+const loadPagedBranches = async (pageNo)=>{
+    let res = await getPagedBranchesListAPI(pageNo);
+    console.log(res);
+
+    res.data.records.forEach(branch=>{
+       // 格式化日期时间
+       if (branch.createTime) {
+         const date = new Date(branch.createTime);
+         branch.createTime = date.toLocaleString('zh-CN', {
+           year: 'numeric',
+           month: '2-digit',
+           day: '2-digit',
+           hour: '2-digit',
+           minute: '2-digit',
+           second: '2-digit'
+         });
+       }
+    })
+
+    tableData.value = res.data.records;
+    pageSize.value = res.data.size;
+    total.value = res.data.total;
+}
+
+// // 生命周期
+// onMounted(() => {
+//   loadData()
+// })
 </script>
 
 <style lang="scss" scoped>

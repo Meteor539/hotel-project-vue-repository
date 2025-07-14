@@ -1,9 +1,9 @@
-import httpInstance from "@/utils/http";
+import httpInstance from "@/utils/request";
 
-//查询所有的分店列表
-export function getAllBranchAPI(){
+//查询分页分店列表
+export function getPagedBranchesListAPI(pageNo = 1){
      return httpInstance({
-        url:'branch/all'
+        url:`branch/list?pageNo=${pageNo}`
      })
 }
 
