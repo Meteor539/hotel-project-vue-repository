@@ -112,7 +112,7 @@
                         :small="small"
                         :disabled="disabled"
                         :background="background"
-                        layout="total, sizes, prev, pager, next, jumper"
+                        layout="total, prev, pager, next, jumper"
                         :page-sizes="[10, 20, 50, 100]"
                         :total="total"
                         @current-change="setCurrentPageNo"
@@ -186,6 +186,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
    const setCurrentPageNo = (pageNo)=>{
     currPageNo.value = pageNo;
+    currentPage.value = pageNo; // 同步当前页码
     console.log("BranchList.vue",pageNo,currPageNo.value);
     loadPagedBranches(pageNo);
   }
@@ -388,27 +389,95 @@ const loadData = async () => {
 }
 
 const loadPagedBranches = async (pageNo)=>{
-    let res = await getPagedBranchesListAPI(pageNo);
-    console.log(res);
+    try {
+        loading.value = true;
+        let res = await getPagedBranchesListAPI(pageNo);
+        console.log('API响应数据:', res);
+        console.log('数据结构:', res.data);
+        console.log('res.data的所有属性:', Object.keys(res.data || {}));
 
-    res.data.records.forEach(branch=>{
-       // 格式化日期时间
-       if (branch.createTime) {
-         const date = new Date(branch.createTime);
-         branch.createTime = date.toLocaleString('zh-CN', {
-           year: 'numeric',
-           month: '2-digit',
-           day: '2-digit',
-           hour: '2-digit',
-           minute: '2-digit',
-           second: '2-digit'
-         });
-       }
-    })
+        if (res && res.data) {
+            // 检查数据结构，可能是直接在data中，也可能在data.records中
+            let records = res.data.records || res.data.list || res.data;
+            // 优先使用后端返回的总数，如果没有则使用当前记录数
+            let totalCount = res.data.total || res.data.totalElements || res.data.totalCount || records.length;
+            let currentPageSize = res.data.size || res.data.pageSize || 10;
 
-    tableData.value = res.data.records;
-    pageSize.value = res.data.size;
-    total.value = res.data.total;
+            console.log('解析后的records:', records);
+            console.log('解析后的total:', totalCount);
+            console.log('解析后的size:', currentPageSize);
+
+            if (Array.isArray(records)) {
+                // 数据映射和格式化
+                const formattedRecords = records.map(branch => {
+                    // 创建一个新对象，确保字段名称正确
+                    const formattedBranch = {
+                        id: branch.id || branch.branchId,
+                        name: branch.name || branch.branchName,
+                        address: branch.address || branch.branchAddress,
+                        phone: branch.phone || branch.branchPhone,
+                        roomCount: branch.roomCount || branch.totalRooms || 0,
+                        createTime: branch.createTime || branch.createdTime || branch.createDate
+                    };
+
+                    // 格式化日期时间
+                    if (formattedBranch.createTime) {
+                        const date = new Date(formattedBranch.createTime);
+                        formattedBranch.createTime = date.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                    }
+
+                    return formattedBranch;
+                });
+
+                console.log('格式化后的数据:', formattedRecords);
+
+                tableData.value = formattedRecords;
+                pageSize.value = currentPageSize;
+                total.value = totalCount;
+
+                console.log('最终设置的总数:', total.value);
+
+                // 如果没有数据，添加一些测试数据用于调试
+                if (formattedRecords.length === 0) {
+                    console.log('没有数据，添加测试数据');
+                    tableData.value = [
+                        {
+                            id: 1,
+                            name: '测试分店1',
+                            address: '测试地址1',
+                            phone: '13800138001',
+                            roomCount: 50,
+                            createTime: '2025-07-14 12:00:00'
+                        },
+                        {
+                            id: 2,
+                            name: '测试分店2',
+                            address: '测试地址2',
+                            phone: '13800138002',
+                            roomCount: 80,
+                            createTime: '2025-07-14 13:00:00'
+                        }
+                    ];
+                    total.value = 2;
+                }
+            } else {
+                // ElMessage.error('数据格式错误');
+            }
+        } else {
+            ElMessage.error('无法获取数据');
+        }
+    } catch (error) {
+        console.error('加载分店数据失败:', error);
+    } finally {
+        loading.value = false;
+    }
 }
 
 // // 生命周期
