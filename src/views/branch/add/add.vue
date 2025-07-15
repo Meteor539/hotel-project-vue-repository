@@ -75,20 +75,39 @@ const handleSubmit = async () => {
     await formRef.value.validate()
 
     if (isEdit.value) {
+      // 准备更新数据，将表单字段映射为API期望的字段
+      const updateData = {
+        branchId: formData.id,
+        branchName: formData.name,
+        branchAddress: formData.address,
+        branchPhone: formData.phone,
+        roomCount: formData.roomCount,
+        branchPicUrl: formData.photo
+      }
+
+      console.log('提交更新数据:', updateData)
       // 调用API更新分店
-      await updateBranchAPI(formData)
+      await updateBranchAPI(updateData)
       ElMessage.success('更新分店成功')
       // 返回列表页
       router.push('/branch/list')
     } else {
+      // 新增模式，准备新增数据
+      const addData = {
+        branchName: formData.name,
+        branchAddress: formData.address,
+        branchPhone: formData.phone,
+        roomCount: formData.roomCount,
+        branchPicUrl: formData.photo
+      }
+
+      console.log('提交新增数据:', addData)
       // 调用API新增分店
-      await addBranchAPI(formData)
+      await addBranchAPI(addData)
       ElMessage.success('新增分店成功')
       // 重置表单
       handleReset()
     }
-
-    console.log('提交数据:', formData)
   } catch (error) {
     console.error(isEdit.value ? '更新分店失败:' : '新增分店失败:', error)
     ElMessage.error(isEdit.value ? '更新分店失败' : '新增分店失败')
@@ -109,8 +128,34 @@ const handleReset = () => {
 const loadBranchDetail = async (id) => {
   try {
     const res = await getBranchByIdAPI(id)
-    if (res.data.code === 200) {
+    console.log('分店详情API响应:', res)
+
+    // 根据实际API响应结构调整数据访问路径
+    if (res && res.code === 1 && res.data) {
+      // API响应结构是 { code: 1, msg: '...', data: {...} }
+      const branchData = res.data
+
+      // 字段映射：API字段名 -> 表单字段名
+      formData.id = branchData.branchId
+      formData.name = branchData.branchName
+      formData.address = branchData.branchAddress
+      formData.phone = branchData.branchPhone
+      formData.roomCount = branchData.roomCount
+      formData.photo = branchData.branchPicUrl || ''
+
+      console.log('映射后的表单数据:', formData)
+      ElMessage.success('分店信息加载成功')
+    } else if (res && res.code === 200 && res.data) {
+      // 如果响应结构是 { code: 200, data: {...} }
+      Object.assign(formData, res.data)
+      console.log('加载的分店数据:', res.data)
+    } else if (res && res.data && res.data.code === 200) {
+      // 如果响应结构是 { data: { code: 200, data: {...} } }
       Object.assign(formData, res.data.data)
+      console.log('加载的分店数据:', res.data.data)
+    } else {
+      console.error('API响应格式异常:', res)
+      ElMessage.error('获取分店详情失败')
     }
   } catch (error) {
     console.error('加载分店详情失败:', error)
@@ -128,10 +173,16 @@ const handlePhotoChange = (photoUrls) => {
 
 // 页面初始化
 onMounted(() => {
+  console.log('页面初始化，路由参数:', route.query)
+
   // 检查是否为编辑模式
   if (route.query.id && route.query.mode === 'edit') {
+    console.log('进入编辑模式，分店ID:', route.query.id)
     isEdit.value = true
+    formData.id = route.query.id // 设置表单ID
     loadBranchDetail(route.query.id)
+  } else {
+    console.log('进入新增模式')
   }
 })
 </script>
