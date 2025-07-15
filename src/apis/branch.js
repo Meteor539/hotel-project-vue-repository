@@ -1,9 +1,9 @@
 import httpInstance from "@/utils/request";
 
 //查询分页分店列表
-export function getPagedBranchesListAPI(pageNo = 1){
+export function getPagedBranchesListAPI(pageNo = 1, pageSize = 10){
      return httpInstance({
-        url:`branch/list?pageNo=${pageNo}`
+        url:`branch/list?pageNo=${pageNo}&pageSize=${pageSize}`
      })
 }
 

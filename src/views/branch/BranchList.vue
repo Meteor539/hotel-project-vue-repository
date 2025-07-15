@@ -77,13 +77,14 @@
                      :header-row-style="{color:'#555',textAlign:'center'}"
                      @selection-change="handleSelectionChange">
                      <el-table-column type="selection" width="55" />
-                     <el-table-column prop="id" label="编号" width="180" />
-                     <el-table-column prop="name" label="分店名称" width="200" />
-                     <el-table-column prop="address" label="分店地址" width="300" />
-                     <el-table-column prop="phone" label="分店电话" width="150" />
-                     <el-table-column prop="roomCount" label="房间总数" width="150" />
+                     <el-table-column prop="id" label="编号" width="100" />
+                     <el-table-column prop="name" label="分店名称" width="180" />
+                     <!-- <el-table-column prop="address" label="分店地址" width="406" /> -->
+                     <el-table-column prop="address" label="分店地址" />
+                     <el-table-column prop="phone" label="分店电话" width="180" />
+                     <el-table-column prop="roomCount" label="房间总数" width="100" />
                      <el-table-column prop="createTime" label="构建时间" width="180" />
-                     <el-table-column label="操作" width="232">
+                     <el-table-column label="操作" width="230">
                          <!-- <template #default="{ row }">
                              <el-button type="warning" size="small" @click="handleEdit(row)">
                                  修改
@@ -112,7 +113,7 @@
                         :small="small"
                         :disabled="disabled"
                         :background="background"
-                        layout="total, prev, pager, next, jumper"
+                        layout="total, sizes, prev, pager, next, jumper"
                         :page-sizes="[10, 20, 50, 100]"
                         :total="total"
                         @current-change="setCurrentPageNo"
@@ -179,33 +180,19 @@ import { ElMessage, ElMessageBox } from 'element-plus'
    const background = ref(false);
    const disabled = ref(false);
 
-   //当前访问的页面发生的改变的时候触发
-   const handleCurrentChange = (val) => {
-    console.log(`current page: ${val}`)
-   }
+
 
    const setCurrentPageNo = (pageNo)=>{
     currPageNo.value = pageNo;
     currentPage.value = pageNo; // 同步当前页码
     console.log("BranchList.vue",pageNo,currPageNo.value);
-    loadPagedBranches(pageNo);
+    loadPagedBranches(pageNo, pageSize.value);
   }
 
-   const props = defineProps({
-      psize:{
-         type:Number,
-         default:10
-      },
-      total:{
-         type:Number,
-         default:100
-      }
-   });
-
-   const emit = defineEmits(['setCurrentPageNo']);
+// props和emit定义已在下面，删除重复定义
 
   onMounted(()=>{
-    loadPagedBranches(1);
+    loadPagedBranches(1, pageSize.value);
 });
 
 // 响应式数据
@@ -224,12 +211,7 @@ const searchForm = reactive({
   roomCount: ''
 })
 
-// 分页数据
-const pagination = reactive({
-  currentPage: 1,
-  pageSize: 10,
-  total: 0
-})
+// 分页数据已在上面定义，这里删除重复定义
 
 // 表单数据
 const formData = reactive({
@@ -260,7 +242,9 @@ const formRules = {
 // 方法
 const handleSearch = () => {
   console.log('搜索', searchForm)
-  loadPagedBranches(1)
+  currentPage.value = 1 // 重置到第一页
+  currPageNo.value = 1
+  loadPagedBranches(1, pageSize.value)
 }
 
 const handleAdd = () => {
@@ -286,7 +270,7 @@ const handleDelete = async (row) => {
     // 这里调用删除API
     // await deleteBranchAPI(row.id)
     ElMessage.success('删除成功')
-    loadPagedBranches(currPageNo.value)
+    loadPagedBranches(currPageNo.value, pageSize.value)
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败')
@@ -308,7 +292,7 @@ const handleBatchDelete = async () => {
     })
 
     ElMessage.success('批量删除成功')
-    loadPagedBranches(currPageNo.value)
+    loadPagedBranches(currPageNo.value, pageSize.value)
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('批量删除失败')
@@ -322,13 +306,12 @@ const handleSelectionChange = (selection) => {
 
 const handleSizeChange = (size) => {
   pageSize.value = size
-  loadPagedBranches(currPageNo.value)
+  currentPage.value = 1 // 重置到第一页
+  currPageNo.value = 1
+  loadPagedBranches(1, size)
 }
 
-// const handleCurrentChange = (page) => {
-//   pagination.currentPage = page
-//   loadData()
-// }
+
 
 const handleSubmit = async () => {
   try {
@@ -345,7 +328,7 @@ const handleSubmit = async () => {
     }
 
     dialogVisible.value = false
-    loadPagedBranches(currPageNo.value)
+    loadPagedBranches(currPageNo.value, pageSize.value)
   } catch (error) {
     console.error('提交失败:', error)
   }
@@ -367,31 +350,12 @@ const resetForm = () => {
   formRef.value?.clearValidate()
 }
 
-const loadData = async () => {
-  loading.value = true
-  try {
-    // 这里调用API获取数据
-    // const result = await getAllBranchAPI({
-    //   ...searchForm,
-    //   page: pagination.currentPage,
-    //   size: pagination.pageSize
-    // })
-    // tableData.value = result.records
-    // pagination.total = result.total
+// loadData函数已被loadPagedBranches替代，删除重复代码
 
-    // 模拟数据已在上面定义
-    pagination.total = 100
-  } catch (error) {
-    ElMessage.error('加载数据失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-const loadPagedBranches = async (pageNo)=>{
+const loadPagedBranches = async (pageNo, size = pageSize.value)=>{
     try {
         loading.value = true;
-        let res = await getPagedBranchesListAPI(pageNo);
+        let res = await getPagedBranchesListAPI(pageNo, size);
         console.log('API响应数据:', res);
         console.log('数据结构:', res.data);
         console.log('res.data的所有属性:', Object.keys(res.data || {}));
@@ -523,10 +487,11 @@ const loadPagedBranches = async (pageNo)=>{
     .table-container {
             margin-top: 20px;
             margin-bottom: 20px;
-        // .pagination-container {
-        //     margin-top: 20px;
-        //     text-align: right;
-        // }
+    }
+
+    .pagination-container {
+        margin-top: 20px;
+        text-align: right;
     }
 }
 </style>
