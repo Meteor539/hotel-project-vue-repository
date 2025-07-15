@@ -186,28 +186,19 @@ const handleSelectionChange = (selection) => {
 const loadPagedBranches = async (pageNo, size = pageSize.value)=>{
     try {
         loading.value = true;
-        
-        // 尝试调用真实API
-        try {
-            let res = await getPagedBranchesListAPI(pageNo, size);
-            console.log('API响应数据:', res);
-            console.log('数据结构:', res.data);
-            console.log('res.data的所有属性:', Object.keys(res.data || {}));
 
-            if (res && res.data) {
-                // 处理真实API数据
-                handleRealApiData(res, size);
-                return;
-            }
-        } catch (apiError) {
-            console.warn('API调用失败，使用模拟数据:', apiError.message);
-            // 使用模拟数据进行分页测试
-            handleMockData(pageNo, size);
-            return;
+        let res = await getPagedBranchesListAPI(pageNo, size);
+
+        if (res && res.data) {
+            // 处理真实API数据
+            handleRealApiData(res, size);
+        } else {
+            ElMessage.error('获取分店列表失败')
         }
 
     } catch (error) {
         console.error('加载分店数据失败:', error);
+        ElMessage.error('加载分店数据失败')
     } finally {
         loading.value = false;
     }
@@ -220,10 +211,6 @@ const handleRealApiData = (res, size) => {
     // 优先使用后端返回的总数，如果没有则使用当前记录数
     let totalCount = res.data.total || res.data.totalElements || res.data.totalCount || records.length;
     let currentPageSize = res.data.size || res.data.pageSize || size;
-
-    console.log('解析后的records:', records);
-    console.log('解析后的total:', totalCount);
-    console.log('解析后的size:', currentPageSize);
 
     if (Array.isArray(records)) {
         // 数据映射和格式化
@@ -254,45 +241,13 @@ const handleRealApiData = (res, size) => {
             return formattedBranch;
         });
 
-        console.log('格式化后的数据:', formattedRecords);
-
         tableData.value = formattedRecords;
         pageSize.value = currentPageSize;
         total.value = totalCount;
-
-        console.log('最终设置的总数:', total.value);
     }
 }
 
-// 处理模拟数据（用于测试分页功能）
-const handleMockData = (pageNo, size) => {
-    console.log(`加载模拟数据 - 页码: ${pageNo}, 每页: ${size}`);
-    
-    // 生成模拟数据
-    const mockData = [];
-    const totalMockRecords = 157; // 模拟总记录数
-    
-    // 计算当前页的数据范围
-    const startIndex = (pageNo - 1) * size;
-    const endIndex = Math.min(startIndex + size, totalMockRecords);
-    
-    for (let i = startIndex; i < endIndex; i++) {
-        mockData.push({
-            id: i + 1,
-            name: `分店${i + 1}`,
-            address: `测试地址${i + 1}号`,
-            phone: `138${String(i).padStart(8, '0')}`,
-            roomCount: Math.floor(Math.random() * 100) + 50,
-            createTime: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toLocaleString('zh-CN')
-        });
-    }
-    
-    tableData.value = mockData;
-    total.value = totalMockRecords;
-    pageSize.value = size;
-    
-    console.log(`模拟数据加载完成 - 当前页: ${pageNo}, 显示: ${mockData.length}条, 总计: ${totalMockRecords}条`);
-}
+// 模拟数据处理函数已删除，现在只使用真实API数据
 
 // 删除了对话框关闭处理函数
 

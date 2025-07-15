@@ -27,6 +27,7 @@
             <span>房间管理</span>
           </template>
           <el-menu-item index="/room/list">房间列表</el-menu-item>
+          <el-menu-item index="/room/add" style="display: none;">新增房间</el-menu-item>
           <el-menu-item index="/room/status">房间状态</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="3">

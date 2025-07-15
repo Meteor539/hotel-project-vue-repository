@@ -32,3 +32,11 @@ export function deleteBranchAPI(id){
       method:'DELETE'
    })
 }
+
+//查询所有分店列表（用于下拉选择）
+export function getAllBranchesAPI(){
+   return httpInstance({
+      url:'branch/all',
+      method:'GET'
+   })
+}

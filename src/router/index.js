@@ -10,6 +10,7 @@ import BranchAdd from '@/views/branch/add/add.vue'
 // 房间管理
 import Room from '@/views/room/Room.vue'
 import RoomList from '@/views/room/list/list.vue'
+import RoomAdd from '@/views/room/add/add.vue'
 import RoomStatus from '@/views/room/status/status.vue'
 
 // 用户管理
@@ -47,6 +48,10 @@ const router = createRouter({
             {
               path:"list",
               component:RoomList
+            },
+            {
+              path:"add",
+              component:RoomAdd
             },
             {
               path:"status",
