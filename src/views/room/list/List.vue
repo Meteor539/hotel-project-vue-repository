@@ -39,11 +39,13 @@
             <el-button @click="handleReset">重置</el-button>
           </el-form-item>
         </el-form>
-      </div>
-      <div class="operation-buttons">
         <el-button type="warning" :icon="Plus" @click="handleAdd">新增房间</el-button>
         <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除</el-button>
       </div>
+      <!-- <div class="operation-buttons">
+        <el-button type="warning" :icon="Plus" @click="handleAdd">新增房间</el-button>
+        <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除</el-button>
+      </div> -->
 
       <!-- 房间列表表格 -->
       <el-table
@@ -55,8 +57,8 @@
         stripe
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="id" label="编号" width="80" />
-        <el-table-column prop="roomNumber" label="房间号" width="120" />
+        <el-table-column prop="id" label="编号" width="60" />
+        <el-table-column prop="roomNumber" label="房间号" width="80" />
         <el-table-column prop="branchName" label="所属分店" width="150" />
         <el-table-column prop="roomType" label="房间类型" width="120" />
         <el-table-column prop="price" label="房间价格" width="120">
@@ -76,7 +78,7 @@
         </el-table-column>
         <el-table-column prop="description" label="房间描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="scope">
             <el-button type="primary" size="small" :icon="EditPen" @click="handleEdit(scope.row)">修改</el-button>
             <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
