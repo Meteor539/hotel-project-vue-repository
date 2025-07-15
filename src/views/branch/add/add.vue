@@ -1,7 +1,7 @@
 <template>
   <div class="branch-add">
     <div class="wrapper">
-      <div class="title">新增分店</div>
+      <div class="title">{{ isEdit ? '编辑分店' : '新增分店' }}</div>
       <el-form :model="formData" :rules="rules" ref="formRef" label-width="120px">
         <el-form-item label="分店名称" prop="name">
           <el-input v-model="formData.name" placeholder="请输入分店名称" />
@@ -13,14 +13,14 @@
           <el-input v-model="formData.phone" placeholder="请输入分店电话" />
         </el-form-item>
         <el-form-item label="房间总数" prop="roomCount">
-          <el-input-number v-model="formData.roomCount" :min="1" />
+          <el-input-number v-model="formData.roomCount" :min="1" :precision="0" :controls-position="'right'" />
         </el-form-item>
         <el-form-item label="分店照片" prop="photo">
           <UploadImage v-model="formData.photoList" @change="handlePhotoChange" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSubmit">提交</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="handleSubmit">{{ isEdit ? '更新' : '提交' }}</el-button>
+          <el-button @click="handleReset">{{ isEdit ? '取消' : '重置' }}</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -28,13 +28,21 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { addBranchAPI } from '@/apis/branchAPI'
+import { addBranchAPI, updateBranchAPI, getBranchByIdAPI } from '@/apis/branchAPI'
 import UploadImage from '@/components/UploadImage.vue'
 
+const router = useRouter()
+const route = useRoute()
 const formRef = ref()
+
+// 判断是否为编辑模式
+const isEdit = ref(false)
+
 const formData = reactive({
+  id: null,
   name: '',
   address: '',
   phone: '',
@@ -65,23 +73,49 @@ const rules = {
 const handleSubmit = async () => {
   try {
     await formRef.value.validate()
-    
-    // 调用API新增分店
-    await addBranchAPI(formData)
-    
+
+    if (isEdit.value) {
+      // 调用API更新分店
+      await updateBranchAPI(formData)
+      ElMessage.success('更新分店成功')
+      // 返回列表页
+      router.push('/branch/list')
+    } else {
+      // 调用API新增分店
+      await addBranchAPI(formData)
+      ElMessage.success('新增分店成功')
+      // 重置表单
+      handleReset()
+    }
+
     console.log('提交数据:', formData)
-    ElMessage.success('新增分店成功')
-    
-    // 重置表单
-    handleReset()
   } catch (error) {
-    console.error('新增分店失败:', error)
-    ElMessage.error('新增分店失败')
+    console.error(isEdit.value ? '更新分店失败:' : '新增分店失败:', error)
+    ElMessage.error(isEdit.value ? '更新分店失败' : '新增分店失败')
   }
 }
 
 const handleReset = () => {
-  formRef.value.resetFields()
+  if (isEdit.value) {
+    // 编辑模式下，取消按钮返回列表页
+    router.push('/branch/list')
+  } else {
+    // 新增模式下，重置表单
+    formRef.value.resetFields()
+  }
+}
+
+// 加载分店详情（编辑模式）
+const loadBranchDetail = async (id) => {
+  try {
+    const res = await getBranchByIdAPI(id)
+    if (res.data.code === 200) {
+      Object.assign(formData, res.data.data)
+    }
+  } catch (error) {
+    console.error('加载分店详情失败:', error)
+    ElMessage.error('加载分店详情失败')
+  }
 }
 
 // 处理照片变化
@@ -91,6 +125,15 @@ const handlePhotoChange = (photoUrls) => {
   formData.photo = photoUrls.length > 0 ? photoUrls[0] : ''
   console.log('照片列表更新:', photoUrls)
 }
+
+// 页面初始化
+onMounted(() => {
+  // 检查是否为编辑模式
+  if (route.query.id && route.query.mode === 'edit') {
+    isEdit.value = true
+    loadBranchDetail(route.query.id)
+  }
+})
 </script>
 
 <style lang="scss" scoped>

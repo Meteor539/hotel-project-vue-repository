@@ -40,3 +40,11 @@ export function getAllBranchesAPI(){
       method:'GET'
    })
 }
+
+//根据ID查询分店详情
+export function getBranchByIdAPI(id){
+   return httpInstance({
+      url:`branch/${id}`,
+      method:'GET'
+   })
+}
