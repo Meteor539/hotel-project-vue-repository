@@ -1,9 +1,9 @@
 import httpInstance from "@/utils/request";
 
-//查询分页分店列表
-export function getPagedBranchesListAPI(pageNo = 1, pageSize = 10){
+//查询分页分店列表 - 根据API文档，只需要pageNo参数
+export function getPagedBranchesListAPI(pageNo = 1){
      return httpInstance({
-        url:`branch/list?pageNo=${pageNo}&pageSize=${pageSize}`
+        url:`branch/list?pageNo=${pageNo}`
      })
 }
 
@@ -33,10 +33,10 @@ export function deleteBranchAPI(id){
    })
 }
 
-//查询所有分店列表（用于下拉选择）
+//查询所有分店列表（用于下拉选择） - 根据API文档调整
 export function getAllBranchesAPI(){
    return httpInstance({
-      url:'branch/list?pageNo=1&pageSize=100',
+      url:'branch/list?pageNo=1',
       method:'GET'
    })
 }
@@ -45,6 +45,14 @@ export function getAllBranchesAPI(){
 export function getBranchByIdAPI(id){
    return httpInstance({
       url:`branch/${id}`,
+      method:'GET'
+   })
+}
+
+//根据分店名获取分店编号 - 新增API接口
+export function getBranchIdByNameAPI(branchName){
+   return httpInstance({
+      url:`branch/branchId/branchName/${branchName}`,
       method:'GET'
    })
 }

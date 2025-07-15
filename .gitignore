@@ -32,3 +32,11 @@ coverage
 ziliao/
 
 *.gitignore
+
+apidoc/
+
+baogao/
+
+*.gitignore
+
+.gitignore

@@ -100,7 +100,7 @@ const setCurrentPageNo = (pageNo)=>{
   currPageNo.value = pageNo;
   currentPage.value = pageNo; // 同步当前页码
   console.log("list.vue",pageNo,currPageNo.value);
-  loadPagedBranches(pageNo, pageSize.value);
+  loadPagedBranches(pageNo);
 }
 
 // 搜索功能
@@ -108,7 +108,7 @@ const handleSearch = () => {
   console.log('搜索', searchForm)
   currentPage.value = 1 // 重置到第一页
   currPageNo.value = 1
-  loadPagedBranches(1, pageSize.value)
+  loadPagedBranches(1)
 }
 
 // 重置搜索
@@ -121,7 +121,7 @@ const handleReset = () => {
   })
   currPageNo.value = 1
   currentPage.value = 1
-  loadPagedBranches(1, pageSize.value)
+  loadPagedBranches(1)
 }
 
 // 新增分店 - 跳转到add页面
@@ -143,18 +143,42 @@ const handleEdit = (row) => {
 // 删除分店
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm('确定要删除这个分店吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
+    await ElMessageBox.confirm(
+      `您确定要删除分店"${row.name}"吗？删除后将无法恢复，请谨慎操作。`,
+      '删除分店',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true,
+        customClass: 'custom-message-box',
+        appendTo: document.body,
+        distinguishCancelAndClose: true,
+        closeOnClickModal: false,
+        showClose: false
+      }
+    )
+
     await deleteBranchAPI(row.id)
-    ElMessage.success('删除成功')
-    loadPagedBranches(currPageNo.value, pageSize.value)
+
+    // 显示成功提示
+    ElMessage({
+      message: '删除分店成功',
+      type: 'success',
+      duration: 2000,
+      showClose: true
+    })
+
+    loadPagedBranches(currPageNo.value)
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      // 显示错误提示
+      ElMessage({
+        message: '删除分店失败，请重试',
+        type: 'error',
+        duration: 3000,
+        showClose: true
+      })
     }
   }
 }
@@ -162,27 +186,55 @@ const handleDelete = async (row) => {
 // 批量删除
 const handleBatchDelete = async () => {
   if (selectedRows.value.length === 0) {
-    ElMessage.warning('请选择要删除的分店')
+    ElMessage({
+      message: '请选择要删除的分店',
+      type: 'warning',
+      duration: 2000,
+      showClose: true
+    })
     return
   }
   
   try {
-    await ElMessageBox.confirm(`确定要删除选中的 ${selectedRows.value.length} 个分店吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      `您确定要删除选中的 ${selectedRows.value.length} 个分店吗？删除后将无法恢复，请谨慎操作。`,
+      '批量删除分店',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true,
+        customClass: 'custom-message-box',
+        appendTo: document.body,
+        distinguishCancelAndClose: true,
+        closeOnClickModal: false,
+        showClose: false
+      }
+    )
     
     // 这里应该调用批量删除API，暂时用循环删除
     for (const row of selectedRows.value) {
       await deleteBranchAPI(row.id)
     }
     
-    ElMessage.success('批量删除成功')
-    loadPagedBranches(currPageNo.value, pageSize.value)
+    // 显示成功提示
+    ElMessage({
+      message: '批量删除成功',
+      type: 'success',
+      duration: 2000,
+      showClose: true
+    })
+
+    loadPagedBranches(currPageNo.value)
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('批量删除失败')
+      // 显示错误提示
+      ElMessage({
+        message: '批量删除失败，请重试',
+        type: 'error',
+        duration: 3000,
+        showClose: true
+      })
     }
   }
 }
@@ -197,15 +249,15 @@ const handleSelectionChange = (selection) => {
 
 // loadData函数已被loadPagedBranches替代，删除重复代码
 
-const loadPagedBranches = async (pageNo, size = pageSize.value)=>{
+const loadPagedBranches = async (pageNo)=>{
     try {
         loading.value = true;
 
-        let res = await getPagedBranchesListAPI(pageNo, size);
+        let res = await getPagedBranchesListAPI(pageNo);
 
         if (res && res.data) {
             // 处理真实API数据
-            handleRealApiData(res, size);
+            handleRealApiData(res);
         } else {
             ElMessage.error('获取分店列表失败')
         }
@@ -219,12 +271,12 @@ const loadPagedBranches = async (pageNo, size = pageSize.value)=>{
 }
 
 // 处理真实API数据
-const handleRealApiData = (res, size) => {
+const handleRealApiData = (res) => {
     // 检查数据结构，可能是直接在data中，也可能在data.records中
     let records = res.data.records || res.data.list || res.data;
     // 优先使用后端返回的总数，如果没有则使用当前记录数
     let totalCount = res.data.total || res.data.totalElements || res.data.totalCount || records.length;
-    let currentPageSize = res.data.size || res.data.pageSize || size;
+    let currentPageSize = res.data.size || res.data.pageSize || pageSize.value;
 
     if (Array.isArray(records)) {
         // 数据映射和格式化
@@ -266,7 +318,7 @@ const handleRealApiData = (res, size) => {
 
 // 生命周期
 onMounted(()=>{
-    loadPagedBranches(1, pageSize.value);
+    loadPagedBranches(1);
 });
 
 </script>
@@ -321,5 +373,65 @@ onMounted(()=>{
 
 .operation-buttons .el-button {
     margin-right: 10px;
+}
+</style>
+
+<style>
+/* 全局样式，修复消息框定位和美化样式 */
+.custom-message-box {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 10001 !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  min-width: 420px !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ebeef5 !important;
+}
+
+.custom-message-box .el-message-box__header {
+  padding: 20px 20px 10px !important;
+  border-bottom: 1px solid #ebeef5 !important;
+  background-color: #ffffff !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.custom-message-box .el-message-box__title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #303133 !important;
+}
+
+.custom-message-box .el-message-box__content {
+  padding: 20px !important;
+  color: #606266 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.custom-message-box .el-message-box__btns {
+  padding: 10px 20px 20px !important;
+  text-align: right !important;
+  border-radius: 0 0 8px 8px !important;
+}
+
+.custom-message-box .el-button {
+  margin-left: 10px !important;
+  padding: 8px 20px !important;
+  border-radius: 4px !important;
+  font-size: 14px !important;
+}
+
+.custom-message-box .el-button--primary {
+  background-color: #409eff !important;
+  border-color: #409eff !important;
+}
+
+.custom-message-box .el-button--primary:hover {
+  background-color: #66b1ff !important;
+  border-color: #66b1ff !important;
 }
 </style>

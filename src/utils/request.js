@@ -23,14 +23,22 @@ roomHttpInstance.interceptors.request.use(config => {
 }, e => Promise.reject(e));
 
 //增加响应拦截器 - 分店服务
-httpInstance.interceptors.response.use(res=>res.data, e=>{
-    return Promise.reject(e)
-});
+httpInstance.interceptors.response.use(
+    res => res.data,
+    e => {
+        console.error('分店服务请求错误:', e);
+        return Promise.reject(e);
+    }
+);
 
 //增加响应拦截器 - 房间服务
-roomHttpInstance.interceptors.response.use(res=>res.data, e=>{
-    return Promise.reject(e)
-});
+roomHttpInstance.interceptors.response.use(
+    res => res.data,
+    e => {
+        console.error('房间服务请求错误:', e);
+        return Promise.reject(e);
+    }
+);
 
 export default httpInstance;
 export { roomHttpInstance };

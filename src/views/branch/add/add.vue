@@ -32,6 +32,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { addBranchAPI, updateBranchAPI, getBranchByIdAPI } from '@/apis/branchAPI'
+import { createPhoneRules } from '@/utils/validators'
 import UploadImage from '@/components/UploadImage.vue'
 
 const router = useRouter()
@@ -60,10 +61,7 @@ const rules = {
     { required: true, message: '请输入分店地址', trigger: 'blur' },
     { min: 5, max: 200, message: '分店地址长度在 5 到 200 个字符', trigger: 'blur' }
   ],
-  phone: [
-    { required: true, message: '请输入分店电话', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
-  ],
+  phone: createPhoneRules(true, '请输入分店电话'),
   roomCount: [
     { required: true, message: '请输入房间总数', trigger: 'blur' },
     { type: 'number', min: 1, max: 1000, message: '房间总数必须在 1 到 1000 之间', trigger: 'blur' }
@@ -88,9 +86,19 @@ const handleSubmit = async () => {
       console.log('提交更新数据:', updateData)
       // 调用API更新分店
       await updateBranchAPI(updateData)
-      ElMessage.success('更新分店成功')
-      // 返回列表页
-      router.push('/branch/list')
+
+      // 显示成功提示
+      ElMessage({
+        message: '修改分店成功',
+        type: 'success',
+        duration: 2000,
+        showClose: true
+      })
+
+      // 延迟跳转，确保提示消息显示
+      setTimeout(() => {
+        router.push('/branch/list')
+      }, 1500)
     } else {
       // 新增模式，准备新增数据
       const addData = {
@@ -104,13 +112,30 @@ const handleSubmit = async () => {
       console.log('提交新增数据:', addData)
       // 调用API新增分店
       await addBranchAPI(addData)
-      ElMessage.success('新增分店成功')
-      // 重置表单
-      handleReset()
+
+      // 显示成功提示
+      ElMessage({
+        message: '新增分店成功',
+        type: 'success',
+        duration: 2000,
+        showClose: true
+      })
+
+      // 延迟跳转，确保提示消息显示
+      setTimeout(() => {
+        router.push('/branch/list')
+      }, 1500)
     }
   } catch (error) {
     console.error(isEdit.value ? '更新分店失败:' : '新增分店失败:', error)
-    ElMessage.error(isEdit.value ? '更新分店失败' : '新增分店失败')
+
+    // 显示错误提示
+    ElMessage({
+      message: isEdit.value ? '修改分店失败，请重试' : '新增分店失败，请重试',
+      type: 'error',
+      duration: 3000,
+      showClose: true
+    })
   }
 }
 
