@@ -18,30 +18,43 @@
         </el-form-item>
         <el-form-item label="房间类型" prop="roomType">
           <el-select v-model="formData.roomType" placeholder="请选择房间类型" style="width: 100%">
-            <el-option label="标准间" value="标准间" />
-            <el-option label="大床房" value="大床房" />
-            <el-option label="豪华间" value="豪华间" />
-            <el-option label="套房" value="套房" />
-            <el-option label="总统套房" value="总统套房" />
+            <el-option label="普单人间" value="普单人间" />
+            <el-option label="普双人间" value="普双人间" />
+            <el-option label="三人间" value="三人间" />
+            <el-option label="商务套房" value="商务套房" />
+            <el-option label="贵宾套房" value="贵宾套房" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="屋内设施" prop="facilities">
+          <el-checkbox-group v-model="formData.facilitiesList">
+            <el-checkbox label="平面液晶电视">平面液晶电视</el-checkbox>
+            <el-checkbox label="冰箱">冰箱</el-checkbox>
+            <el-checkbox label="空调">空调</el-checkbox>
+            <el-checkbox label="卫星电视">卫星电视</el-checkbox>
+            <el-checkbox label="互联网接入">互联网接入</el-checkbox>
+            <el-checkbox label="冲浪浴缸">冲浪浴缸</el-checkbox>
+            <el-checkbox label="观海景">观海景</el-checkbox>
+          </el-checkbox-group>
         </el-form-item>
         <el-form-item label="房间价格" prop="price">
           <el-input-number v-model="formData.price" :min="0" :precision="2" style="width: 100%" />
         </el-form-item>
         <el-form-item label="房间状态" prop="status">
           <el-select v-model="formData.status" placeholder="请选择房间状态" style="width: 100%">
-            <el-option label="可用" value="可用" />
-            <el-option label="已入住" value="已入住" />
+            <el-option label="未入住" value="未入住" />
+            <el-option label="有住客" value="有住客" />
+            <el-option label="已预订" value="已预订" />
+            <el-option label="保洁中" value="保洁中" />
+            <el-option label="已退房未保洁" value="已退房未保洁" />
             <el-option label="维修中" value="维修中" />
-            <el-option label="清洁中" value="清洁中" />
           </el-select>
         </el-form-item>
-        <el-form-item label="房间描述" prop="description">
-          <el-input 
-            v-model="formData.description" 
-            type="textarea" 
+        <el-form-item label="备注说明" prop="remark">
+          <el-input
+            v-model="formData.remark"
+            type="textarea"
             :rows="3"
-            placeholder="请输入房间描述" 
+            placeholder="请输入备注说明"
           />
         </el-form-item>
         <el-form-item label="房间照片" prop="photo">
@@ -57,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { addRoomAPI, updateRoomAPI, getRoomByIdAPI } from '@/apis/roomAPI'
@@ -78,9 +91,11 @@ const formData = reactive({
   roomNumber: '',
   branchId: null,
   roomType: '',
+  facilitiesList: [], // 设施复选框列表
+  facilities: '', // 设施字符串（用于后端）
   price: 0,
-  status: '可用',
-  description: '',
+  status: '未入住',
+  remark: '',
   photo: '', // 保留原字段用于后端兼容
   photoList: [] // 新增照片列表字段
 })
@@ -124,7 +139,13 @@ const loadRoomDetail = async (id) => {
   try {
     const res = await getRoomByIdAPI(id)
     if (res.data.code === 200) {
-      Object.assign(formData, res.data.data)
+      const roomData = res.data.data
+      Object.assign(formData, roomData)
+
+      // 处理设施数据回显
+      if (roomData.facilities) {
+        formData.facilitiesList = roomData.facilities.split('，').filter(item => item.trim())
+      }
     }
   } catch (error) {
     console.error('加载房间详情失败:', error)
@@ -132,11 +153,23 @@ const loadRoomDetail = async (id) => {
   }
 }
 
+// 处理设施列表变化
+const handleFacilitiesChange = () => {
+  // 将设施列表转换为字符串，用于后端存储
+  formData.facilities = formData.facilitiesList.join('，')
+}
+
+// 监听设施列表变化
+watch(() => formData.facilitiesList, handleFacilitiesChange, { deep: true })
+
 // 提交表单
 const handleSubmit = async () => {
   try {
     await formRef.value.validate()
-    
+
+    // 确保设施字符串已更新
+    handleFacilitiesChange()
+
     if (isEdit.value) {
       await updateRoomAPI(formData)
       ElMessage.success('更新成功')
@@ -144,7 +177,7 @@ const handleSubmit = async () => {
       await addRoomAPI(formData)
       ElMessage.success('新增成功')
     }
-    
+
     router.push('/room/list')
   } catch (error) {
     console.error('提交失败:', error)

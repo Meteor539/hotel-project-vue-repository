@@ -231,12 +231,12 @@ const handleRealApiData = (res, size) => {
         const formattedRecords = records.map(branch => {
             // 创建一个新对象，确保字段名称正确
             const formattedBranch = {
-                id: branch.id || branch.branchId,
-                name: branch.name || branch.branchName,
-                address: branch.address || branch.branchAddress,
-                phone: branch.phone || branch.branchPhone,
-                roomCount: branch.roomCount || branch.totalRooms || 0,
-                createTime: branch.createTime || branch.createdTime || branch.createDate
+                id: branch.id || branch.branchId || branch.branch_id,
+                name: branch.name || branch.branchName || branch.branch_name,
+                address: branch.address || branch.branchAddress || branch.branch_address,
+                phone: branch.phone || branch.branchPhone || branch.branch_phone,
+                roomCount: branch.roomCount || branch.totalRooms || branch.room_count || 0,
+                createTime: branch.createTime || branch.createdTime || branch.createDate || branch.create_time
             };
 
             // 格式化日期时间，与房间列表保持一致的格式

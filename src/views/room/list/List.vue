@@ -19,19 +19,21 @@
           </el-form-item>
           <el-form-item label="房间类型">
             <el-select v-model="searchForm.roomType" placeholder="请选择类型" clearable style="width: 200px">
-              <el-option label="标准间" value="标准间" />
-              <el-option label="大床房" value="大床房" />
-              <el-option label="豪华间" value="豪华间" />
-              <el-option label="套房" value="套房" />
-              <el-option label="总统套房" value="总统套房" />
+              <el-option label="普单人间" value="普单人间" />
+              <el-option label="普双人间" value="普双人间" />
+              <el-option label="三人间" value="三人间" />
+              <el-option label="商务套房" value="商务套房" />
+              <el-option label="贵宾套房" value="贵宾套房" />
             </el-select>
           </el-form-item>
           <el-form-item label="房间状态">
             <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 200px">
-              <el-option label="可用" value="可用" />
-              <el-option label="已入住" value="已入住" />
+              <el-option label="未入住" value="未入住" />
+              <el-option label="有住客" value="有住客" />
+              <el-option label="已预订" value="已预订" />
+              <el-option label="保洁中" value="保洁中" />
+              <el-option label="已退房未保洁" value="已退房未保洁" />
               <el-option label="维修中" value="维修中" />
-              <el-option label="清洁中" value="清洁中" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -58,15 +60,20 @@
       >
         <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="编号" width="60" />
-        <el-table-column prop="roomNumber" label="房间号" width="80" />
+        <el-table-column prop="roomNumber" label="房间号" width="70" />
         <el-table-column prop="branchName" label="所属分店" width="150" />
-        <el-table-column prop="roomType" label="房间类型" width="120" />
-        <el-table-column prop="price" label="房间价格" width="120">
+        <el-table-column prop="roomType" label="房间类型" width="100" />
+        <el-table-column prop="facilities" label="房间设施" min-width="200" show-overflow-tooltip>
+          <template #default="scope">
+            {{ scope.row.facilities || '无' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="price" label="房间价格" width="100">
           <template #default="scope">
             ¥{{ scope.row.price }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="房间状态" width="120">
+        <el-table-column prop="status" label="房间状态" width="100">
           <template #default="scope">
             <el-tag
               :type="getStatusTagType(scope.row.status)"
@@ -76,7 +83,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="房间描述" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="remark" label="备注说明" min-width="200" show-overflow-tooltip />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="scope">
@@ -228,14 +235,18 @@ const handleSelectionChange = (selection) => {
 // 获取状态标签类型
 const getStatusTagType = (status) => {
   switch (status) {
-    case '可用':
+    case '未入住':
       return 'success'
-    case '已入住':
+    case '有住客':
+      return 'warning'
+    case '已预订':
+      return 'primary'
+    case '保洁中':
+      return 'info'
+    case '已退房未保洁':
       return 'warning'
     case '维修中':
       return 'danger'
-    case '清洁中':
-      return 'info'
     default:
       return ''
   }
