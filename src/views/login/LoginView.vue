@@ -46,8 +46,10 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/counter'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const loginFormRef = ref()
 
@@ -72,7 +74,10 @@ const handleLogin = async () => {
 
     // 模拟登录请求
     setTimeout(() => {
-      localStorage.setItem('token', 'mock-token')
+      // 模拟登录成功，保存用户信息
+      const mockToken = 'mock-token-' + Date.now()
+      userStore.login(loginForm.username, mockToken)
+
       ElMessage.success('登录成功')
       router.push('/branch/list')
       loading.value = false
@@ -80,6 +85,7 @@ const handleLogin = async () => {
 
   } catch (error) {
     console.error('登录失败:', error)
+    loading.value = false
   }
 }
 </script>

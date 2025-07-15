@@ -26,50 +26,61 @@ const router = createRouter({
       path: '/',
       component: Layout,
       redirect: '/branch/list',
+      meta: { requiresAuth: true },
       children:[
         {
           path:"/branch",
           component:Branch,
+          meta: { requiresAuth: true },
           children:[
             {
               path:"list",
-              component:BranchList
+              component:BranchList,
+              meta: { requiresAuth: true }
             },
             {
               path:"add",
-              component:BranchAdd
+              component:BranchAdd,
+              meta: { requiresAuth: true }
             }
           ]
         },
         {
           path:"/room",
           component:Room,
+          meta: { requiresAuth: true },
           children:[
             {
               path:"list",
-              component:RoomList
+              component:RoomList,
+              meta: { requiresAuth: true }
             },
             {
               path:"add",
-              component:RoomAdd
+              component:RoomAdd,
+              meta: { requiresAuth: true }
             },
             {
               path:"status",
-              component:RoomStatus
+              component:RoomStatus,
+              meta: { requiresAuth: true }
             }
           ]
         },
         {
           path:"/user",
           component:User,
+          meta: { requiresAuth: true },
           children:[
             {
               path:"list",
-              component:UserList
+              component:UserList,
+              meta: { requiresAuth: true }
             },
             {
               path:"admin",
-              component:UserAdmin
+              component:UserAdmin,
+              meta: { requiresAuth: true }
             }
           ]
         }
@@ -80,6 +91,23 @@ const router = createRouter({
       component: Login
     }
   ]
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  // 检查路由是否需要认证
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // 检查是否有token
+    const token = localStorage.getItem('token')
+    if (!token) {
+      // 没有token，跳转到登录页
+      next('/login')
+    } else {
+      next()
+    }
+  } else {
+    next()
+  }
 })
 
 export default router
