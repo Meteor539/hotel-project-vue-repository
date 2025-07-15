@@ -18,6 +18,7 @@
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">查 询</el-button>
+            <el-button @click="handleReset">重 置</el-button>
           </el-form-item>
         </el-form>
         <el-button type="warning" :icon="Plus" @click="handleAdd">新增分店</el-button>
@@ -39,7 +40,7 @@
           <el-table-column prop="createTime" label="构建时间" width="180" />
           <el-table-column label="操作" width="230">
             <template #default="{ row }">
-              <el-button type="warning" size="small" :icon="EditPen" @click="handleEdit(row)">
+              <el-button type="primary" size="small" :icon="EditPen" @click="handleEdit(row)">
                 修 改
               </el-button>
               <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(row)">
@@ -107,6 +108,19 @@ const handleSearch = () => {
   console.log('搜索', searchForm)
   currentPage.value = 1 // 重置到第一页
   currPageNo.value = 1
+  loadPagedBranches(1, pageSize.value)
+}
+
+// 重置搜索
+const handleReset = () => {
+  Object.assign(searchForm, {
+    name: '',
+    address: '',
+    phone: '',
+    roomCount: ''
+  })
+  currPageNo.value = 1
+  currentPage.value = 1
   loadPagedBranches(1, pageSize.value)
 }
 
@@ -225,17 +239,16 @@ const handleRealApiData = (res, size) => {
                 createTime: branch.createTime || branch.createdTime || branch.createDate
             };
 
-            // 格式化日期时间
+            // 格式化日期时间，与房间列表保持一致的格式
             if (formattedBranch.createTime) {
                 const date = new Date(formattedBranch.createTime);
-                formattedBranch.createTime = date.toLocaleString('zh-CN', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                formattedBranch.createTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
             }
 
             return formattedBranch;
@@ -265,8 +278,9 @@ onMounted(()=>{
 
 .wrapper {
     background: #fff;
-    border-radius: 8px;
     padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .title {

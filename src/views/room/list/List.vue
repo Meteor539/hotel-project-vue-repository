@@ -35,8 +35,8 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button @click="handleReset">重置</el-button>
+            <el-button type="primary" @click="handleSearch">搜 索</el-button>
+            <el-button @click="handleReset">重 置</el-button>
           </el-form-item>
         </el-form>
         <el-button type="warning" :icon="Plus" @click="handleAdd">新增房间</el-button>
@@ -80,8 +80,8 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="scope">
-            <el-button type="primary" size="small" :icon="EditPen" @click="handleEdit(scope.row)">修改</el-button>
-            <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button type="primary" size="small" :icon="EditPen" @click="handleEdit(scope.row)">修 改</el-button>
+            <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">删 除</el-button>
           </template>
         </el-table-column>
       </el-table>
