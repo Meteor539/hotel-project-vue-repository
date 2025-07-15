@@ -16,7 +16,7 @@
           <el-input-number v-model="formData.roomCount" :min="1" />
         </el-form-item>
         <el-form-item label="分店照片" prop="photo">
-          <el-input v-model="formData.photo" placeholder="请输入照片URL" />
+          <UploadImage v-model="formData.photoList" @change="handlePhotoChange" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSubmit">提交</el-button>
@@ -31,6 +31,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { addBranchAPI } from '@/apis/branchAPI'
+import UploadImage from '@/components/UploadImage.vue'
 
 const formRef = ref()
 const formData = reactive({
@@ -38,7 +39,8 @@ const formData = reactive({
   address: '',
   phone: '',
   roomCount: 1,
-  photo: ''
+  photo: '', // 保留原字段用于后端兼容
+  photoList: [] // 新增照片列表字段
 })
 
 const rules = {
@@ -80,6 +82,14 @@ const handleSubmit = async () => {
 
 const handleReset = () => {
   formRef.value.resetFields()
+}
+
+// 处理照片变化
+const handlePhotoChange = (photoUrls) => {
+  // TODO: 根据后端接口要求处理照片数据
+  // 目前将第一张照片作为主照片存储到 photo 字段
+  formData.photo = photoUrls.length > 0 ? photoUrls[0] : ''
+  console.log('照片列表更新:', photoUrls)
 }
 </script>
 

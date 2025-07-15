@@ -45,7 +45,7 @@
           />
         </el-form-item>
         <el-form-item label="房间照片" prop="photo">
-          <el-input v-model="formData.photo" placeholder="请输入照片URL" />
+          <UploadImage v-model="formData.photoList" @change="handlePhotoChange" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSubmit">{{ isEdit ? '更新' : '新增' }}</el-button>
@@ -62,6 +62,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { addRoomAPI, updateRoomAPI, getRoomByIdAPI } from '@/apis/roomAPI'
 import { getAllBranchesAPI } from '@/apis/branchAPI'
+import UploadImage from '@/components/UploadImage.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -80,7 +81,8 @@ const formData = reactive({
   price: 0,
   status: '可用',
   description: '',
-  photo: ''
+  photo: '', // 保留原字段用于后端兼容
+  photoList: [] // 新增照片列表字段
 })
 
 // 表单验证规则
@@ -153,6 +155,14 @@ const handleSubmit = async () => {
 // 取消操作
 const handleCancel = () => {
   router.push('/room/list')
+}
+
+// 处理照片变化
+const handlePhotoChange = (photoUrls) => {
+  // TODO: 根据后端接口要求处理照片数据
+  // 目前将第一张照片作为主照片存储到 photo 字段
+  formData.photo = photoUrls.length > 0 ? photoUrls[0] : ''
+  console.log('照片列表更新:', photoUrls)
 }
 
 // 页面初始化
