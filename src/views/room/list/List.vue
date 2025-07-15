@@ -259,144 +259,86 @@ const setCurrentPageNo = (pageNo) => {
 }
 
 // 加载分页房间数据
-const loadPagedRooms = async (pageNo, size) => {
-  loading.value = true
+const loadPagedRooms = async (pageNo, size = pageSize.value) => {
   try {
-    // 暂时使用模拟数据进行测试
-    const mockData = [
-      {
-        id: 1,
-        roomNumber: '101',
-        branchName: '北京总店',
-        roomType: '标准间',
-        price: 288.00,
-        status: '可用',
-        description: '舒适的标准间，配备独立卫浴和空调',
-        createTime: '2024-01-15 10:30:00'
-      },
-      {
-        id: 2,
-        roomNumber: '102',
-        branchName: '北京总店',
-        roomType: '大床房',
-        price: 368.00,
-        status: '已入住',
-        description: '宽敞的大床房，适合商务出行',
-        createTime: '2024-01-15 10:35:00'
-      },
-      {
-        id: 3,
-        roomNumber: '201',
-        branchName: '上海分店',
-        roomType: '豪华间',
-        price: 588.00,
-        status: '清洁中',
-        description: '豪华装修，享受高品质住宿体验',
-        createTime: '2024-01-15 11:00:00'
-      },
-      {
-        id: 4,
-        roomNumber: '202',
-        branchName: '上海分店',
-        roomType: '套房',
-        price: 888.00,
-        status: '可用',
-        description: '宽敞套房，包含客厅和卧室',
-        createTime: '2024-01-15 11:15:00'
-      },
-      {
-        id: 5,
-        roomNumber: '301',
-        branchName: '广州分店',
-        roomType: '总统套房',
-        price: 1588.00,
-        status: '维修中',
-        description: '顶级总统套房，奢华享受',
-        createTime: '2024-01-15 11:30:00'
-      },
-      {
-        id: 6,
-        roomNumber: '302',
-        branchName: '广州分店',
-        roomType: '标准间',
-        price: 268.00,
-        status: '可用',
-        description: '经济实惠的标准间',
-        createTime: '2024-01-15 11:45:00'
-      },
-      {
-        id: 7,
-        roomNumber: '401',
-        branchName: '深圳分店',
-        roomType: '大床房',
-        price: 398.00,
-        status: '已入住',
-        description: '现代化大床房，设施齐全',
-        createTime: '2024-01-15 12:00:00'
-      },
-      {
-        id: 8,
-        roomNumber: '402',
-        branchName: '深圳分店',
-        roomType: '豪华间',
-        price: 628.00,
-        status: '可用',
-        description: '海景豪华间，视野开阔',
-        createTime: '2024-01-15 12:15:00'
-      }
-    ]
+    loading.value = true;
 
-    // 模拟分页
-    const startIndex = (pageNo - 1) * size
-    const endIndex = startIndex + size
-    const pagedData = mockData.slice(startIndex, endIndex)
+    let res = await getPagedRoomsListAPI(pageNo, size);
 
-    roomList.value = pagedData
-    total.value = mockData.length
-
-    // 注释掉真实API调用，等后端接口准备好后再启用
-    /*
-    const params = {
-      pageNo,
-      pageSize: size,
-      ...searchForm
-    }
-
-    const res = await getPagedRoomsListAPI(params.pageNo, params.pageSize)
-    if (res.data.code === 200) {
-      roomList.value = res.data.data.records || []
-      total.value = res.data.data.total || 0
+    if (res && res.data) {
+      // 处理真实API数据
+      handleRealApiData(res, size);
     } else {
-      ElMessage.error('加载房间列表失败')
+      ElMessage.error('获取房间列表失败')
     }
-    */
+
   } catch (error) {
-    console.error('加载房间列表失败:', error)
-    ElMessage.error('加载房间列表失败')
+    console.error('加载房间数据失败:', error);
+    ElMessage.error('加载房间数据失败')
   } finally {
-    loading.value = false
+    loading.value = false;
+  }
+}
+
+// 处理真实API数据
+const handleRealApiData = (res, size) => {
+  // 检查数据结构，可能是直接在data中，也可能在data.records中
+  let records = res.data.records || res.data.list || res.data;
+  // 优先使用后端返回的总数，如果没有则使用当前记录数
+  let totalCount = res.data.total || res.data.totalElements || res.data.totalCount || records.length;
+  let currentPageSize = res.data.size || res.data.pageSize || size;
+
+  if (Array.isArray(records)) {
+    // 数据映射和格式化
+    const formattedRecords = records.map(room => {
+      // 创建一个新对象，确保字段名称正确
+      const formattedRoom = {
+        id: room.id || room.roomId || room.room_id,
+        roomNumber: room.roomNumber || room.roomNo || room.room_no || '',
+        branchName: room.branchName || room.branch_name || '未知分店',
+        roomType: room.roomType || room.room_type || '',
+        facilities: room.facilities || room.roomFacilities || room.room_facilities || '',
+        price: room.price || 0,
+        status: room.status || room.roomStatus || room.room_status || '未入住',
+        remark: room.remark || room.roomRemark || room.room_remark || '',
+        createTime: room.createTime || room.createdTime || room.createDate || room.create_time
+      };
+
+      // 格式化日期时间
+      if (formattedRoom.createTime) {
+        const date = new Date(formattedRoom.createTime);
+        // 检查日期是否有效
+        if (!isNaN(date.getTime())) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          formattedRoom.createTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        } else {
+          formattedRoom.createTime = formattedRoom.createTime || '暂无数据';
+        }
+      } else {
+        formattedRoom.createTime = '暂无数据';
+      }
+
+      return formattedRoom;
+    });
+
+    roomList.value = formattedRecords;
+    pageSize.value = currentPageSize;
+    total.value = totalCount;
   }
 }
 
 // 加载分店列表
 const loadBranches = async () => {
   try {
-    // 暂时使用模拟数据
-    branchList.value = [
-      { id: 1, name: '北京总店' },
-      { id: 2, name: '上海分店' },
-      { id: 3, name: '广州分店' },
-      { id: 4, name: '深圳分店' },
-      { id: 5, name: '杭州分店' }
-    ]
-
-    // 注释掉真实API调用
-    /*
     const res = await getAllBranchesAPI()
     if (res.data.code === 200) {
       branchList.value = res.data.data || []
     }
-    */
   } catch (error) {
     console.error('加载分店列表失败:', error)
   }

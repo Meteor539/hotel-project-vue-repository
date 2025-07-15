@@ -1,15 +1,15 @@
-import httpInstance from "@/utils/request";
+import { roomHttpInstance } from "@/utils/request";
 
 //查询分页房间列表
 export function getPagedRoomsListAPI(pageNo = 1, pageSize = 10){
-     return httpInstance({
+     return roomHttpInstance({
         url:`room/list?pageNo=${pageNo}&pageSize=${pageSize}`
      })
 }
 
 //新增房间
 export function addRoomAPI(data){
-   return httpInstance({
+   return roomHttpInstance({
       url:'room/save',
       method:'POST',
       data
@@ -18,7 +18,7 @@ export function addRoomAPI(data){
 
 //更新房间
 export function updateRoomAPI(data){
-   return httpInstance({
+   return roomHttpInstance({
       url:'room/update',
       method:'PUT',
       data
@@ -27,7 +27,7 @@ export function updateRoomAPI(data){
 
 //删除房间
 export function deleteRoomAPI(id){
-   return httpInstance({
+   return roomHttpInstance({
       url:`room/delete/${id}`,
       method:'DELETE'
    })
@@ -35,7 +35,7 @@ export function deleteRoomAPI(id){
 
 //根据ID查询房间详情
 export function getRoomByIdAPI(id){
-   return httpInstance({
+   return roomHttpInstance({
       url:`room/${id}`,
       method:'GET'
    })
