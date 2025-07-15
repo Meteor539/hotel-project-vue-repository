@@ -19,7 +19,7 @@
             <span>分店管理</span>
           </template>
           <el-menu-item index="/branch/list">分店列表</el-menu-item>
-          <el-menu-item index="/branch/add">新增分店</el-menu-item>
+          <el-menu-item index="/branch/add" style="display: none;">新增分店</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="2">
           <template #title>

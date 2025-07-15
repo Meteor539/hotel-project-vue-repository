@@ -56,45 +56,7 @@
       </div>
     </div>
 
-    <!-- 新增/编辑对话框 -->
-    <el-dialog
-      :title="dialogTitle"
-      v-model="dialogVisible"
-      width="600px"
-      @close="handleDialogClose"
-    >
-      <el-form
-        :model="formData"
-        :rules="formRules"
-        ref="formRef"
-        label-width="100px"
-      >
-        <el-form-item label="分店名称" prop="name">
-          <el-input v-model="formData.name" placeholder="请输入分店名称" />
-        </el-form-item>
-        <el-form-item label="分店地址" prop="address">
-          <el-input v-model="formData.address" placeholder="请输入分店地址" />
-        </el-form-item>
-        <el-form-item label="分店电话" prop="phone">
-          <el-input v-model="formData.phone" placeholder="请输入分店电话" />
-        </el-form-item>
-        <el-form-item label="房间总数" prop="roomCount">
-          <el-input-number
-            v-model="formData.roomCount"
-            :min="1"
-            :max="1000"
-            placeholder="请输入房间总数"
-            style="width: 100%"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+
   </div>
 </template>
 
@@ -102,8 +64,12 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditPen, Delete, Plus } from '@element-plus/icons-vue'
-import { getPagedBranchesListAPI, addBranchAPI, updateBranchAPI, deleteBranchAPI } from '@/apis/branchAPI'
+import { useRouter } from 'vue-router'
+import { getPagedBranchesListAPI, deleteBranchAPI } from '@/apis/branchAPI'
 import Page from '@/components/Page.vue'
+
+// 路由实例
+const router = useRouter()
 
 // 搜索表单
 const searchForm = reactive({
@@ -126,41 +92,7 @@ const total = ref(0)
 // 当前页号
 const currPageNo = ref(1)
 
-// 对话框相关
-const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const isEdit = ref(false)
-
-// 表单数据
-const formData = reactive({
-  id: null,
-  name: '',
-  address: '',
-  phone: '',
-  roomCount: 1
-})
-
-// 表单验证规则
-const formRules = {
-  name: [
-    { required: true, message: '请输入分店名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '分店名称长度在 2 到 50 个字符', trigger: 'blur' }
-  ],
-  address: [
-    { required: true, message: '请输入分店地址', trigger: 'blur' },
-    { min: 5, max: 200, message: '分店地址长度在 5 到 200 个字符', trigger: 'blur' }
-  ],
-  phone: [
-    { required: true, message: '请输入分店电话', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
-  ],
-  roomCount: [
-    { required: true, message: '请输入房间总数', trigger: 'blur' },
-    { type: 'number', min: 1, max: 1000, message: '房间总数必须在 1 到 1000 之间', trigger: 'blur' }
-  ]
-}
-
-const formRef = ref()
+// 删除了对话框相关的变量，因为改为跳转到add页面
 
 // 分页相关方法
 const setCurrentPageNo = (pageNo)=>{
@@ -178,20 +110,20 @@ const handleSearch = () => {
   loadPagedBranches(1, pageSize.value)
 }
 
-// 新增分店
+// 新增分店 - 跳转到add页面
 const handleAdd = () => {
-  dialogTitle.value = '新增分店'
-  isEdit.value = false
-  resetForm()
-  dialogVisible.value = true
+  router.push('/branch/add')
 }
 
-// 编辑分店
+// 编辑分店 - 跳转到add页面并传递编辑数据
 const handleEdit = (row) => {
-  dialogTitle.value = '编辑分店'
-  isEdit.value = true
-  Object.assign(formData, row)
-  dialogVisible.value = true
+  router.push({
+    path: '/branch/add',
+    query: {
+      id: row.id,
+      mode: 'edit'
+    }
+  })
 }
 
 // 删除分店
@@ -246,40 +178,8 @@ const handleSelectionChange = (selection) => {
   selectedRows.value = selection
 }
 
-// handleSizeChange函数已删除，因为使用了通用分页组件
 
-// 提交表单
-const handleSubmit = async () => {
-  try {
-    await formRef.value.validate()
-    
-    if (isEdit.value) {
-      await updateBranchAPI(formData)
-      ElMessage.success('修改成功')
-    } else {
-      await addBranchAPI(formData)
-      ElMessage.success('新增成功')
-    }
-    
-    dialogVisible.value = false
-    loadPagedBranches(currPageNo.value, pageSize.value)
-  } catch (error) {
-    console.error('提交失败:', error)
-    ElMessage.error('操作失败')
-  }
-}
-
-// 重置表单
-const resetForm = () => {
-  Object.assign(formData, {
-    id: null,
-    name: '',
-    address: '',
-    phone: '',
-    roomCount: 1
-  })
-  formRef.value?.clearValidate()
-}
+// 删除了表单提交和重置函数，因为改为跳转到add页面
 
 // loadData函数已被loadPagedBranches替代，删除重复代码
 
@@ -394,10 +294,7 @@ const handleMockData = (pageNo, size) => {
     console.log(`模拟数据加载完成 - 当前页: ${pageNo}, 显示: ${mockData.length}条, 总计: ${totalMockRecords}条`);
 }
 
-// 对话框关闭处理
-const handleDialogClose = () => {
-  resetForm()
-}
+// 删除了对话框关闭处理函数
 
 // 生命周期
 onMounted(()=>{
