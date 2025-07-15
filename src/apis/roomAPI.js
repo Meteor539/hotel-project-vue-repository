@@ -33,10 +33,10 @@ export function deleteRoomAPI(id){
    })
 }
 
-//根据ID查询房间详情
+//根据ID查询房间详情（通过列表API获取）
 export function getRoomByIdAPI(id){
    return roomHttpInstance({
-      url:`room/${id}`,
+      url:`room/list?pageNo=1&pageSize=100`,
       method:'GET'
    })
 }

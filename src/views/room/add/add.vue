@@ -36,9 +36,6 @@
             <el-checkbox label="观海景">观海景</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
-        <el-form-item label="房间价格" prop="price">
-          <el-input-number v-model="formData.price" :min="0" :precision="2" style="width: 100%" />
-        </el-form-item>
         <el-form-item label="房间状态" prop="status">
           <el-select v-model="formData.status" placeholder="请选择房间状态" style="width: 100%">
             <el-option label="未入住" value="未入住" />
@@ -93,7 +90,6 @@ const formData = reactive({
   roomType: '',
   facilitiesList: [], // 设施复选框列表
   facilities: '', // 设施字符串（用于后端）
-  price: 0,
   status: '未入住',
   remark: '',
   photo: '', // 保留原字段用于后端兼容
@@ -112,10 +108,6 @@ const rules = {
   roomType: [
     { required: true, message: '请选择房间类型', trigger: 'change' }
   ],
-  price: [
-    { required: true, message: '请输入房间价格', trigger: 'blur' },
-    { type: 'number', min: 0, message: '房间价格必须大于等于0', trigger: 'blur' }
-  ],
   status: [
     { required: true, message: '请选择房间状态', trigger: 'change' }
   ]
@@ -125,27 +117,72 @@ const rules = {
 const loadBranches = async () => {
   try {
     const res = await getAllBranchesAPI()
-    if (res.data.code === 200) {
-      branchList.value = res.data.data
+    console.log('分店API响应:', res)
+
+    // 根据实际API响应结构调整数据访问路径
+    if (res && res.code === 1 && res.data) {
+      // API响应结构是 { code: 1, msg: '...', data: { records: [...] } }
+      branchList.value = res.data.records || res.data.list || res.data || []
+    } else if (res && res.code === 200 && res.data) {
+      // 备用响应结构 { code: 200, data: [...] }
+      branchList.value = res.data.records || res.data.list || res.data || []
+    } else if (res && Array.isArray(res)) {
+      // 直接返回数组的情况
+      branchList.value = res
+    } else {
+      console.error('分店API响应格式不正确:', res)
+      ElMessage.error('分店数据格式错误')
+      branchList.value = []
     }
   } catch (error) {
     console.error('加载分店列表失败:', error)
     ElMessage.error('加载分店列表失败')
+    branchList.value = []
   }
 }
 
 // 加载房间详情（编辑模式）
 const loadRoomDetail = async (id) => {
   try {
-    const res = await getRoomByIdAPI(id)
-    if (res.data.code === 200) {
-      const roomData = res.data.data
-      Object.assign(formData, roomData)
+    console.log('页面初始化，路由参数:', { id, mode: route.query.mode })
+    console.log('进入编辑模式，房间ID:', id)
 
-      // 处理设施数据回显
-      if (roomData.facilities) {
-        formData.facilitiesList = roomData.facilities.split('，').filter(item => item.trim())
+    const res = await getRoomByIdAPI(id)
+    console.log('房间列表API响应:', res)
+
+    // 从房间列表中筛选出特定ID的房间
+    if (res && res.code === 1 && res.data && res.data.records) {
+      const roomList = res.data.records
+      const roomData = roomList.find(room => room.roomId == id)
+
+      if (roomData) {
+        console.log('找到房间数据:', roomData)
+
+        // 字段映射：API字段名 -> 表单字段名
+        formData.id = roomData.roomId
+        formData.roomNumber = roomData.roomNo
+        formData.branchId = roomData.branchId
+        formData.roomType = roomData.roomType
+        formData.status = roomData.roomStatus || '未入住'
+        formData.remark = roomData.roomRemark || ''
+        formData.photo = roomData.roomPhoto || ''
+
+        // 处理设施数据回显
+        if (roomData.roomFacilities) {
+          const facilitiesStr = roomData.roomFacilities || ''
+          formData.facilities = facilitiesStr
+          formData.facilitiesList = facilitiesStr.split('，').filter(item => item.trim())
+        }
+
+        console.log('映射后的表单数据:', formData)
+        ElMessage.success('房间信息加载成功')
+      } else {
+        console.error('未找到指定ID的房间:', id)
+        ElMessage.error('未找到指定的房间信息')
       }
+    } else {
+      console.error('API响应格式异常:', res)
+      ElMessage.error('获取房间详情失败')
     }
   } catch (error) {
     console.error('加载房间详情失败:', error)
@@ -171,10 +208,35 @@ const handleSubmit = async () => {
     handleFacilitiesChange()
 
     if (isEdit.value) {
-      await updateRoomAPI(formData)
+      // 准备更新数据，将表单字段映射为API期望的字段
+      const updateData = {
+        id: formData.id,
+        roomNumber: formData.roomNumber,
+        branchId: formData.branchId,
+        roomType: formData.roomType,
+        facilities: formData.facilities,
+        status: formData.status,
+        remark: formData.remark,
+        photo: formData.photo
+      }
+
+      console.log('提交更新数据:', updateData)
+      await updateRoomAPI(updateData)
       ElMessage.success('更新成功')
     } else {
-      await addRoomAPI(formData)
+      // 新增模式，准备新增数据
+      const addData = {
+        roomNumber: formData.roomNumber,
+        branchId: formData.branchId,
+        roomType: formData.roomType,
+        facilities: formData.facilities,
+        status: formData.status,
+        remark: formData.remark,
+        photo: formData.photo
+      }
+
+      console.log('提交新增数据:', addData)
+      await addRoomAPI(addData)
       ElMessage.success('新增成功')
     }
 

@@ -68,11 +68,6 @@
             {{ scope.row.facilities || '无' }}
           </template>
         </el-table-column>
-        <el-table-column prop="price" label="房间价格" width="100">
-          <template #default="scope">
-            ¥{{ scope.row.price }}
-          </template>
-        </el-table-column>
         <el-table-column prop="status" label="房间状态" width="100">
           <template #default="scope">
             <el-tag
@@ -164,7 +159,7 @@ const handleEdit = (row) => {
   router.push({
     path: '/room/add',
     query: {
-      id: row.id,
+      id: row.roomId || row.id,
       mode: 'edit'
     }
   })
@@ -298,7 +293,6 @@ const handleRealApiData = (res, size) => {
         branchName: room.branchName || room.branch_name || '未知分店',
         roomType: room.roomType || room.room_type || '',
         facilities: room.facilities || room.roomFacilities || room.room_facilities || '',
-        price: room.price || 0,
         status: room.status || room.roomStatus || room.room_status || '未入住',
         remark: room.remark || room.roomRemark || room.room_remark || '',
         createTime: room.createTime || room.createdTime || room.createDate || room.create_time
@@ -336,11 +330,25 @@ const handleRealApiData = (res, size) => {
 const loadBranches = async () => {
   try {
     const res = await getAllBranchesAPI()
-    if (res.data.code === 200) {
-      branchList.value = res.data.data || []
+    console.log('分店API响应:', res)
+
+    // 根据实际API响应结构调整数据访问路径
+    if (res && res.code === 1 && res.data) {
+      // API响应结构是 { code: 1, msg: '...', data: { records: [...] } }
+      branchList.value = res.data.records || res.data.list || res.data || []
+    } else if (res && res.code === 200 && res.data) {
+      // 备用响应结构 { code: 200, data: [...] }
+      branchList.value = res.data.records || res.data.list || res.data || []
+    } else if (res && Array.isArray(res)) {
+      // 直接返回数组的情况
+      branchList.value = res
+    } else {
+      console.error('分店API响应格式不正确:', res)
+      branchList.value = []
     }
   } catch (error) {
     console.error('加载分店列表失败:', error)
+    branchList.value = []
   }
 }
 
