@@ -118,22 +118,33 @@ const loadBranches = async () => {
   try {
     const res = await getAllBranchesAPI()
     console.log('分店API响应:', res)
+    let branches = []
 
     // 根据实际API响应结构调整数据访问路径
     if (res && res.code === 1 && res.data) {
       // API响应结构是 { code: 1, msg: '...', data: { records: [...] } }
-      branchList.value = res.data.records || res.data.list || res.data || []
+      branches = res.data.records || res.data.list || res.data || []
     } else if (res && res.code === 200 && res.data) {
       // 备用响应结构 { code: 200, data: [...] }
-      branchList.value = res.data.records || res.data.list || res.data || []
+      branches = res.data.records || res.data.list || res.data || []
     } else if (res && Array.isArray(res)) {
       // 直接返回数组的情况
-      branchList.value = res
+      branches = res
+    } else if (res && res.data && Array.isArray(res.data)) {
+      branches = res.data
     } else {
       console.error('分店API响应格式不正确:', res)
       ElMessage.error('分店数据格式错误')
-      branchList.value = []
+      branches = []
     }
+
+    // 确保分店数据格式正确，统一字段映射
+    branchList.value = branches.map(branch => ({
+      id: branch.id || branch.branchId || branch.branch_id,
+      name: branch.name || branch.branchName || branch.branch_name || `分店${branch.id || '未知'}`
+    }))
+
+    console.log('处理后的分店列表:', branchList.value)
   } catch (error) {
     console.error('加载分店列表失败:', error)
     ElMessage.error('加载分店列表失败')
