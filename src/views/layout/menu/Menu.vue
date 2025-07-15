@@ -64,7 +64,7 @@ const handleClose = (key, keyPath) => {
 
 <style scoped>
    
-   .el-menu .is-active{
+   .el-menu-item.is-active{
        background-color: #1e78bf !important;
        color:#fff !important;
    }
