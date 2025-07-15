@@ -4,18 +4,18 @@ import Layout from '@/views/layout/LayoutView.vue'
 
 // 分店管理
 import Branch from '@/views/branch/Branch.vue'
-import BranchList from '@/views/branch/BranchList.vue'
-import BranchAdd from '@/views/branch/BranchAdd.vue'
+import BranchList from '@/views/branch/list/list.vue'
+import BranchAdd from '@/views/branch/add/add.vue'
 
 // 房间管理
 import Room from '@/views/room/Room.vue'
-import RoomList from '@/views/room/list/List.vue'
-import RoomStatus from '@/views/room/status/Status.vue'
+import RoomList from '@/views/room/list/list.vue'
+import RoomStatus from '@/views/room/status/status.vue'
 
 // 用户管理
 import User from '@/views/user/User.vue'
-import UserList from '@/views/user/list/List.vue'
-import UserAdmin from '@/views/user/admin/Admin.vue'
+import UserList from '@/views/user/list/list.vue'
+import UserAdmin from '@/views/user/admin/admin.vue'
 
 
 const router = createRouter({

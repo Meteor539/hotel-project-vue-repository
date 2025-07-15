@@ -30,6 +30,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import { addBranchAPI } from '@/apis/branchAPI'
 
 const formRef = ref()
 const formData = reactive({
@@ -42,26 +43,38 @@ const formData = reactive({
 
 const rules = {
   name: [
-    { required: true, message: '请输入分店名称', trigger: 'blur' }
+    { required: true, message: '请输入分店名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '分店名称长度在 2 到 50 个字符', trigger: 'blur' }
   ],
   address: [
-    { required: true, message: '请输入分店地址', trigger: 'blur' }
+    { required: true, message: '请输入分店地址', trigger: 'blur' },
+    { min: 5, max: 200, message: '分店地址长度在 5 到 200 个字符', trigger: 'blur' }
   ],
   phone: [
-    { required: true, message: '请输入分店电话', trigger: 'blur' }
+    { required: true, message: '请输入分店电话', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
   ],
   roomCount: [
-    { required: true, message: '请输入房间总数', trigger: 'blur' }
+    { required: true, message: '请输入房间总数', trigger: 'blur' },
+    { type: 'number', min: 1, max: 1000, message: '房间总数必须在 1 到 1000 之间', trigger: 'blur' }
   ]
 }
 
 const handleSubmit = async () => {
   try {
     await formRef.value.validate()
+    
+    // 调用API新增分店
+    await addBranchAPI(formData)
+    
     console.log('提交数据:', formData)
     ElMessage.success('新增分店成功')
+    
+    // 重置表单
+    handleReset()
   } catch (error) {
-    console.error('表单验证失败:', error)
+    console.error('新增分店失败:', error)
+    ElMessage.error('新增分店失败')
   }
 }
 
