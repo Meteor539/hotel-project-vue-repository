@@ -74,16 +74,20 @@ const handleLogin = async () => {
     loading.value = true
 
     try {
-      // 调用实际登录API
+      // 调用实际登录API - 根据API文档，需要发送完整的User对象
       const loginData = {
+        userId: 0,  // API文档显示userId是可选的，设为0
         userName: loginForm.username,
-        userPassword: loginForm.password
+        userPassword: loginForm.password,
+        userRole: ""  // API文档显示userRole是可选的，设为空字符串
       }
 
+      console.log('发送登录请求:', loginData)
       const res = await loginAPI(loginData)
       console.log('登录API响应:', res)
 
-      if (res && res.code === 1) {
+      // 检查登录是否成功 - 需要code为0且没有错误信息
+      if (res && res.code === 0 && (!res.msg || res.msg === '登录成功' || res.msg === 'success')) {
         // 登录成功，保存用户信息
         const token = res.data?.token || 'token-' + Date.now()
         userStore.login(loginForm.username, token)

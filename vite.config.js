@@ -29,19 +29,20 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:4000',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '')
       },
       '/room-api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/room-api/, '/api')
+        rewrite: (path) => path.replace(/^\/room-api/, '')
       },
       '/user-api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/user-api/, '/api')
+        rewrite: (path) => path.replace(/^\/user-api/, '')
       }
     }
   }
