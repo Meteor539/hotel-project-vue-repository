@@ -120,6 +120,8 @@ const handleReset = () => {
   loadPagedBranches(1)
 }
 
+
+
 // 新增分店 - 跳转到add页面
 const handleAdd = () => {
   router.push('/branch/add')
@@ -263,7 +265,7 @@ const handleRealApiData = (res) => {
 
     if (Array.isArray(records)) {
         // 数据映射和格式化
-        const formattedRecords = records.map(branch => {
+        let formattedRecords = records.map(branch => {
             // 创建一个新对象，确保字段名称正确
             const formattedBranch = {
                 id: branch.id || branch.branchId || branch.branch_id,
@@ -289,10 +291,45 @@ const handleRealApiData = (res) => {
             return formattedBranch;
         });
 
-        tableData.value = formattedRecords;
+        // 应用搜索过滤
+        const filteredRecords = applySearchFilter(formattedRecords);
+
+        tableData.value = filteredRecords;
         pageSize.value = currentPageSize;
-        total.value = totalCount;
+
+        // 如果有搜索条件，使用过滤后的数量；否则使用后端返回的总数
+        const hasSearchConditions = searchForm.name || searchForm.address || searchForm.phone || searchForm.roomCount;
+        total.value = hasSearchConditions ? filteredRecords.length : totalCount;
     }
+}
+
+// 应用搜索过滤
+const applySearchFilter = (records) => {
+    if (!records || !Array.isArray(records)) return [];
+
+    return records.filter(branch => {
+        // 分店名称过滤
+        if (searchForm.name && !branch.name.toLowerCase().includes(searchForm.name.toLowerCase())) {
+            return false;
+        }
+
+        // 分店地址过滤
+        if (searchForm.address && !branch.address.toLowerCase().includes(searchForm.address.toLowerCase())) {
+            return false;
+        }
+
+        // 分店电话过滤
+        if (searchForm.phone && !branch.phone.includes(searchForm.phone)) {
+            return false;
+        }
+
+        // 房间总数过滤
+        if (searchForm.roomCount && branch.roomCount.toString() !== searchForm.roomCount.toString()) {
+            return false;
+        }
+
+        return true;
+    });
 }
 
 // 模拟数据处理函数已删除，现在只使用真实API数据
