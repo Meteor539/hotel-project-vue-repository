@@ -37,7 +37,7 @@
           <el-table-column prop="address" label="分店地址" />
           <el-table-column prop="phone" label="分店电话" width="180" />
           <el-table-column prop="roomCount" label="房间总数" width="100" />
-          <el-table-column prop="createTime" label="构建时间" width="180" />
+          <!-- <el-table-column prop="createTime" label="构建时间" width="180" /> -->
           <el-table-column label="操作" width="230">
             <template #default="{ row }">
               <el-button type="primary" size="small" :icon="EditPen" @click="handleEdit(row)">

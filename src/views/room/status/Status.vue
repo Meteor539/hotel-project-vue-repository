@@ -54,7 +54,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
-          <el-table-column prop="createTime" label="创建时间" width="180" />
+          <!-- <el-table-column prop="createTime" label="创建时间" width="180" /> -->
         </el-table>
       </div>
     </div>
