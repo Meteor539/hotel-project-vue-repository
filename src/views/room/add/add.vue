@@ -54,12 +54,10 @@
             placeholder="请输入备注说明"
           />
         </el-form-item>
-        <el-form-item label="房间照片" prop="photo">
-          <UploadImage v-model="formData.photoList" @change="handlePhotoChange" />
-        </el-form-item>
+
         <el-form-item>
-          <el-button type="primary" @click="handleSubmit">{{ isEdit ? '更新' : '新增' }}</el-button>
-          <el-button @click="handleCancel">取消</el-button>
+          <el-button type="primary" @click="handleSubmit">{{ isEdit ? '更 新' : '新 增' }}</el-button>
+          <el-button @click="handleCancel">取 消</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -72,7 +70,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { addRoomAPI, updateRoomAPI, getRoomByIdAPI } from '@/apis/roomAPI'
 import { getAllBranchesAPI } from '@/apis/branchAPI'
-import UploadImage from '@/components/UploadImage.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -91,9 +88,7 @@ const formData = reactive({
   facilitiesList: [], // 设施复选框列表
   facilities: '', // 设施字符串（用于后端）
   status: '未入住',
-  remark: '',
-  photo: '', // 保留原字段用于后端兼容
-  photoList: [] // 新增照片列表字段
+  remark: ''
 })
 
 // 表单验证规则
@@ -161,35 +156,31 @@ const loadRoomDetail = async (id) => {
     const res = await getRoomByIdAPI(id)
     console.log('房间详情API响应:', res)
 
-    // 根据新的API文档，直接从data中获取房间数据
+    // API现在直接返回单个房间对象
     if (res && res.code === 1 && res.data) {
       const roomData = res.data
+      console.log('找到房间数据:', roomData)
 
-      if (roomData) {
-        console.log('找到房间数据:', roomData)
+      // 字段映射：API字段名 -> 表单字段名
+      formData.id = roomData.roomId || roomData.id
+      formData.roomNumber = roomData.roomNo || roomData.roomNumber
+      formData.branchId = roomData.branchId
+      formData.roomType = roomData.roomType
+      formData.status = roomData.roomStatus || roomData.status || '未入住'
+      formData.remark = roomData.roomRemark || roomData.remark || ''
 
-        // 字段映射：API字段名 -> 表单字段名
-        formData.id = roomData.roomId
-        formData.roomNumber = roomData.roomNo
-        formData.branchId = roomData.branchId
-        formData.roomType = roomData.roomType
-        formData.status = roomData.roomStatus || '未入住'
-        formData.remark = roomData.roomRemark || ''
-        formData.photo = roomData.roomPhoto || ''
-
-        // 处理设施数据回显
-        if (roomData.roomFacilities) {
-          const facilitiesStr = roomData.roomFacilities || ''
-          formData.facilities = facilitiesStr
-          formData.facilitiesList = facilitiesStr.split('，').filter(item => item.trim())
-        }
-
-        console.log('映射后的表单数据:', formData)
-        ElMessage.success('房间信息加载成功')
+      // 处理设施数据回显
+      const facilitiesStr = roomData.roomFacilities || roomData.facilities || ''
+      if (facilitiesStr) {
+        formData.facilities = facilitiesStr
+        formData.facilitiesList = facilitiesStr.split('，').filter(item => item.trim())
       } else {
-        console.error('未找到指定ID的房间:', id)
-        ElMessage.error('未找到指定的房间信息')
+        formData.facilities = ''
+        formData.facilitiesList = []
       }
+
+      console.log('映射后的表单数据:', formData)
+      ElMessage.success('房间信息加载成功')
     } else {
       console.error('API响应格式异常:', res)
       ElMessage.error('获取房间详情失败')
@@ -260,13 +251,7 @@ const handleCancel = () => {
   router.push('/room/list')
 }
 
-// 处理照片变化
-const handlePhotoChange = (photoUrls) => {
-  // TODO: 根据后端接口要求处理照片数据
-  // 目前将第一张照片作为主照片存储到 photo 字段
-  formData.photo = photoUrls.length > 0 ? photoUrls[0] : ''
-  console.log('照片列表更新:', photoUrls)
-}
+
 
 // 页面初始化
 onMounted(() => {

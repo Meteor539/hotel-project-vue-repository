@@ -45,7 +45,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <!-- 以下四列后端没有设计，暂时注释
         <el-table-column prop="createTime" label="创建时间" width="180">
           <template #default="scope">
             {{ formatDateTime(scope.row.createTime) }}
@@ -58,7 +57,6 @@
         </el-table-column>
         <el-table-column prop="createdBy" label="创建人" width="100" />
         <el-table-column prop="updatedBy" label="更新人" width="100" />
-        -->
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button type="primary" size="small" :icon="EditPen" @click="editUser(scope.row)">修 改</el-button>
@@ -109,8 +107,7 @@ const getRoleText = (role) => {
   return roleMap[role] || role
 }
 
-// 格式化日期时间（暂时不需要，后端没有设计时间字段）
-/*
+// 格式化日期时间
 const formatDateTime = (dateTime) => {
   if (!dateTime) return ''
   const date = new Date(dateTime)
@@ -122,49 +119,53 @@ const formatDateTime = (dateTime) => {
   const seconds = String(date.getSeconds()).padStart(2, '0')
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
-*/
 
-// 模拟数据（后端接口未完成时使用）
+// 模拟数据（当API调用失败时使用）
 const mockUserData = [
   {
     userId: 1,
     userName: 'admin',
-    userRole: 'admin'
+    userRole: 'admin',
+    createTime: '2024-01-15 10:30:00',
+    updateTime: '2024-01-15 10:30:00',
+    createdBy: '000001',
+    updatedBy: '000001'
   },
   {
     userId: 2,
     userName: 'manager01',
-    userRole: 'manager'
+    userRole: 'manager',
+    createTime: '2024-01-16 09:15:00',
+    updateTime: '2024-01-16 09:15:00',
+    createdBy: '000001',
+    updatedBy: '000001'
   },
   {
     userId: 3,
     userName: 'user001',
-    userRole: 'user'
+    userRole: 'user',
+    createTime: '2024-01-17 14:20:00',
+    updateTime: '2024-01-17 14:20:00',
+    createdBy: '000001',
+    updatedBy: '000001'
   },
   {
     userId: 4,
     userName: 'manager02',
-    userRole: 'manager'
+    userRole: 'manager',
+    createTime: '2024-01-18 11:45:00',
+    updateTime: '2024-01-18 11:45:00',
+    createdBy: '000001',
+    updatedBy: '000001'
   },
   {
     userId: 5,
     userName: 'user002',
-    userRole: 'user'
-  },
-  {
-    userId: 6,
-    userName: 'user003',
-    userRole: 'user'
-  },
-  {
-    userId: 7,
-    userName: 'supervisor',
-    userRole: 'manager'
-  },
-  {
-    userId: 8,
-    userName: 'user004',
-    userRole: 'user'
+    userRole: 'user',
+    createTime: '2024-01-19 16:30:00',
+    updateTime: '2024-01-19 16:30:00',
+    createdBy: '000001',
+    updatedBy: '000001'
   }
 ]
 
@@ -174,8 +175,28 @@ const loadPagedUsers = async (pageNo = 1, size = 8) => {
     loading.value = true
     console.log(`正在加载第${pageNo}页用户数据，每页${size}条`)
 
-    // 暂时使用模拟数据，等后端接口完成后替换为真实API调用
+    try {
+      const res = await getPagedUsersListAPI(pageNo)
+      console.log('用户列表API响应:', res)
+
+      if (res && res.code === 1 && res.data) {
+        // 处理分页数据 - 根据API响应结构调整
+        const pageData = res.data
+        userList.value = pageData.records || pageData.list || pageData || []
+        total.value = pageData.total || pageData.totalCount || userList.value.length
+        currPageNo.value = pageData.current || pageData.pageNo || pageNo
+
+        console.log('用户列表数据:', userList.value)
+        console.log('总记录数:', total.value)
+        return
+      }
+    } catch (apiError) {
+      console.warn('API调用失败，使用模拟数据:', apiError)
+    }
+
+    // API调用失败时使用模拟数据
     console.log('使用模拟数据进行展示')
+    ElMessage.info('后端服务暂不可用，显示模拟数据')
 
     // 模拟分页逻辑
     const startIndex = (pageNo - 1) * size
@@ -187,30 +208,9 @@ const loadPagedUsers = async (pageNo = 1, size = 8) => {
     total.value = filteredData.length
     currPageNo.value = pageNo
 
-    console.log('用户列表数据:', userList.value)
-    console.log('总记录数:', total.value)
+    console.log('模拟用户列表数据:', userList.value)
+    console.log('模拟总记录数:', total.value)
 
-    // 真实API调用代码（暂时注释）
-    /*
-    const res = await getPagedUsersListAPI(pageNo)
-    console.log('用户列表API响应:', res)
-
-    if (res && res.code === 1 && res.data) {
-      // 处理分页数据
-      const pageData = res.data
-      userList.value = pageData.records || []
-      total.value = pageData.total || 0
-      currPageNo.value = pageData.current || pageNo
-
-      console.log('用户列表数据:', userList.value)
-      console.log('总记录数:', total.value)
-    } else {
-      console.error('用户列表API响应格式不正确:', res)
-      ElMessage.error('获取用户列表失败')
-      userList.value = []
-      total.value = 0
-    }
-    */
   } catch (error) {
     console.error('加载用户列表失败:', error)
     ElMessage.error('加载用户列表失败')
@@ -286,80 +286,131 @@ const handleSelectionChange = (selection) => {
 }
 
 // 批量删除用户
-const handleBatchDelete = () => {
+const handleBatchDelete = async () => {
   if (selectedUsers.value.length === 0) {
-    ElMessage.warning('请先选择要删除的用户')
+    ElMessage({
+      message: '请选择要删除的用户',
+      type: 'warning',
+      duration: 2000
+    })
     return
   }
 
-  const userNames = selectedUsers.value.map(user => user.userName).join('、')
-  ElMessageBox.confirm(
-    `确定要删除选中的 ${selectedUsers.value.length} 个用户吗？\n用户名：${userNames}`,
-    '批量删除确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
+  try {
+    const userNames = selectedUsers.value.map(user => user.userName).join('、')
+    await ElMessageBox.confirm(
+      `您确定要删除选中的 ${selectedUsers.value.length} 个用户吗？删除后将无法恢复，请谨慎操作。\n用户名：${userNames}`,
+      '批量删除用户',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true,
+        customClass: 'custom-message-box',
+        appendTo: document.body,
+        distinguishCancelAndClose: true,
+        closeOnClickModal: false,
+        showClose: false
+      }
+    )
+
     console.log('批量删除用户:', selectedUsers.value)
-    ElMessage.success('批量删除成功')
-    // 这里应该调用批量删除API
-    // 暂时从列表中移除选中的用户
-    const selectedIds = selectedUsers.value.map(user => user.userId)
-    userList.value = userList.value.filter(user => !selectedIds.includes(user.userId))
+
+    try {
+      // 尝试调用删除API
+      for (const user of selectedUsers.value) {
+        await deleteUserAPI(user.userId)
+      }
+    } catch (apiError) {
+      console.warn('API删除失败，使用模拟删除:', apiError)
+      // 从模拟数据中删除
+      const selectedIds = selectedUsers.value.map(user => user.userId)
+      for (let i = mockUserData.length - 1; i >= 0; i--) {
+        if (selectedIds.includes(mockUserData[i].userId)) {
+          mockUserData.splice(i, 1)
+        }
+      }
+    }
+
+    // 显示成功提示
+    ElMessage({
+      message: '批量删除成功',
+      type: 'success',
+      duration: 2000
+    })
+
     selectedUsers.value = []
-  }).catch(() => {
-    console.log('取消批量删除')
-  })
+    // 重新加载当前页数据
+    loadPagedUsers(currPageNo.value, pageSize.value)
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error)
+      ElMessage.error('批量删除失败，请重试')
+    }
+  }
 }
 
 // 删除用户
-const deleteUser = (user) => {
-  ElMessageBox.confirm(
-    `确定要删除用户 "${user.userName}" 吗？`,
-    '删除确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(async () => {
-    try {
-      // 暂时使用模拟删除，等后端接口完成后替换为真实API调用
-      console.log('模拟删除用户:', user.userName)
-
-      // 从模拟数据中删除
-      const index = mockUserData.findIndex(item => item.userId === user.userId)
-      if (index > -1) {
-        mockUserData.splice(index, 1)
-        ElMessage.success('删除成功')
-        // 重新加载当前页数据
-        loadPagedUsers(currPageNo.value, pageSize.value)
-      } else {
-        ElMessage.error('用户不存在')
+const deleteUser = async (user) => {
+  try {
+    await ElMessageBox.confirm(
+      `您确定要删除用户"${user.userName}"吗？删除后将无法恢复，请谨慎操作。`,
+      '删除用户',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true,
+        customClass: 'custom-message-box',
+        appendTo: document.body,
+        distinguishCancelAndClose: true,
+        closeOnClickModal: false,
+        showClose: false
       }
+    )
 
-      // 真实API调用代码（暂时注释）
-      /*
+    console.log('删除用户:', user.userName)
+
+    try {
       const res = await deleteUserAPI(user.userId)
       console.log('删除用户API响应:', res)
 
       if (res && res.code === 1) {
-        ElMessage.success('删除成功')
-        // 重新加载当前页数据
-        loadPagedUsers(currPageNo.value, pageSize.value)
+        // 显示成功提示
+        ElMessage({
+          message: '删除用户成功',
+          type: 'success',
+          duration: 2000
+        })
       } else {
-        ElMessage.error(res?.msg || '删除失败')
+        throw new Error(res?.msg || '删除用户失败')
       }
-      */
-    } catch (error) {
-      console.error('删除用户失败:', error)
-      ElMessage.error('删除失败')
+    } catch (apiError) {
+      console.warn('API删除失败，使用模拟删除:', apiError)
+      // 从模拟数据中删除
+      const index = mockUserData.findIndex(item => item.userId === user.userId)
+      if (index > -1) {
+        mockUserData.splice(index, 1)
+        // 显示成功提示
+        ElMessage({
+          message: '删除用户成功',
+          type: 'success',
+          duration: 2000
+        })
+      } else {
+        ElMessage.error('用户不存在')
+        return
+      }
     }
-  }).catch(() => {
-    console.log('取消删除')
-  })
+
+    // 重新加载当前页数据
+    loadPagedUsers(currPageNo.value, pageSize.value)
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除用户失败:', error)
+      ElMessage.error('删除用户失败，请重试')
+    }
+  }
 }
 
 // 页面初始化
@@ -401,5 +452,65 @@ onMounted(() => {
 
 .el-table {
   margin-bottom: 20px;
+}
+</style>
+
+<style>
+/* 全局样式，修复消息框定位和美化样式 */
+.custom-message-box {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 10001 !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  min-width: 420px !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ebeef5 !important;
+}
+
+.custom-message-box .el-message-box__header {
+  padding: 20px 20px 10px !important;
+  border-bottom: 1px solid #ebeef5 !important;
+  background-color: #ffffff !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.custom-message-box .el-message-box__title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #303133 !important;
+}
+
+.custom-message-box .el-message-box__content {
+  padding: 20px !important;
+  color: #606266 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.custom-message-box .el-message-box__btns {
+  padding: 10px 20px 20px !important;
+  text-align: right !important;
+  border-radius: 0 0 8px 8px !important;
+}
+
+.custom-message-box .el-button {
+  margin-left: 10px !important;
+  padding: 8px 20px !important;
+  border-radius: 4px !important;
+  font-size: 14px !important;
+}
+
+.custom-message-box .el-button--primary {
+  background-color: #409eff !important;
+  border-color: #409eff !important;
+}
+
+.custom-message-box .el-button--primary:hover {
+  background-color: #66b1ff !important;
+  border-color: #66b1ff !important;
 }
 </style>

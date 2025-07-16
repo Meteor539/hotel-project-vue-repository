@@ -12,6 +12,12 @@ const roomHttpInstance = axios.create({
     timeout:5000
 });
 
+// 用户服务HTTP实例（端口3000）- 根据AuthAPI文档
+const userHttpInstance = axios.create({
+    baseURL:'/user-api',
+    timeout:5000
+});
+
 //增加请求拦截器 - 分店服务
 httpInstance.interceptors.request.use(config => {
     return config;
@@ -19,6 +25,11 @@ httpInstance.interceptors.request.use(config => {
 
 //增加请求拦截器 - 房间服务
 roomHttpInstance.interceptors.request.use(config => {
+    return config;
+}, e => Promise.reject(e));
+
+//增加请求拦截器 - 用户服务
+userHttpInstance.interceptors.request.use(config => {
     return config;
 }, e => Promise.reject(e));
 
@@ -40,5 +51,14 @@ roomHttpInstance.interceptors.response.use(
     }
 );
 
+//增加响应拦截器 - 用户服务
+userHttpInstance.interceptors.response.use(
+    res => res.data,
+    e => {
+        console.error('用户服务请求错误:', e);
+        return Promise.reject(e);
+    }
+);
+
 export default httpInstance;
-export { roomHttpInstance };
+export { roomHttpInstance, userHttpInstance };

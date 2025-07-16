@@ -19,8 +19,8 @@
           <UploadImage v-model="formData.photoList" @change="handlePhotoChange" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSubmit">{{ isEdit ? '更新' : '提交' }}</el-button>
-          <el-button @click="handleReset">{{ isEdit ? '取消' : '重置' }}</el-button>
+          <el-button type="primary" @click="handleSubmit">{{ isEdit ? '更 新' : '新 增' }}</el-button>
+          <el-button @click="handleCancel">取 消</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -132,14 +132,9 @@ const handleSubmit = async () => {
   }
 }
 
-const handleReset = () => {
-  if (isEdit.value) {
-    // 编辑模式下，取消按钮返回列表页
-    router.push('/branch/list')
-  } else {
-    // 新增模式下，重置表单
-    formRef.value.resetFields()
-  }
+const handleCancel = () => {
+  // 取消按钮统一返回列表页
+  router.push('/branch/list')
 }
 
 // 加载分店详情（编辑模式）
