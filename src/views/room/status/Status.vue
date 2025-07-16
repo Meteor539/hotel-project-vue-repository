@@ -33,7 +33,7 @@
         </div>
 
         <el-table
-          :data="filteredRoomList"
+          :data="paginatedRoomList"
           style="width: 100%"
           v-loading="loading"
           border
@@ -56,6 +56,11 @@
           <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
           <!-- <el-table-column prop="createTime" label="创建时间" width="180" /> -->
         </el-table>
+
+        <!-- 分页组件 -->
+        <div class="pagination-container" v-if="filteredRoomList.length > 0">
+          <Page :psize="pageSize" :total="total" @setCurrentPageNo="setCurrentPageNo"></Page>
+        </div>
       </div>
     </div>
   </div>
@@ -65,10 +70,10 @@
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
-  getRoomsByStatusAPI,
-  getPagedRoomsListAPI
+  getRoomsByStatusAPI
 } from '@/apis/roomAPI'
 import { getAllBranchesAPI } from '@/apis/branchAPI'
+import Page from '@/components/Page.vue'
 
 // 状态列表配置
 const statusList = ref([
@@ -120,8 +125,14 @@ const statusList = ref([
 const loading = ref(false)
 const selectedStatus = ref('')
 const filteredRoomList = ref([])
+const paginatedRoomList = ref([]) // 分页后的房间列表
 const allRoomData = ref({}) // 缓存各状态的房间数据
 const branchList = ref([]) // 分店列表
+
+// 分页相关状态
+const currPageNo = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 // 获取状态标签类型
 const getStatusTagType = (status) => {
@@ -145,6 +156,23 @@ const handleStatusClick = async (status) => {
 const clearSelection = () => {
   selectedStatus.value = ''
   filteredRoomList.value = []
+  paginatedRoomList.value = []
+  currPageNo.value = 1
+  total.value = 0
+}
+
+// 分页处理
+const updatePagination = () => {
+  total.value = filteredRoomList.value.length
+  const startIndex = (currPageNo.value - 1) * pageSize.value
+  const endIndex = startIndex + pageSize.value
+  paginatedRoomList.value = filteredRoomList.value.slice(startIndex, endIndex)
+}
+
+// 分页页码改变
+const setCurrentPageNo = (pageNo) => {
+  currPageNo.value = pageNo
+  updatePagination()
 }
 
 // 根据状态加载房间列表
@@ -155,6 +183,8 @@ const loadRoomsByStatus = async (status) => {
     // 检查缓存
     if (allRoomData.value[status]) {
       filteredRoomList.value = allRoomData.value[status]
+      currPageNo.value = 1 // 重置到第一页
+      updatePagination()
       return
     }
 
@@ -167,14 +197,19 @@ const loadRoomsByStatus = async (status) => {
       // 缓存数据
       allRoomData.value[status] = formattedRooms
       filteredRoomList.value = formattedRooms
+      currPageNo.value = 1 // 重置到第一页
+      updatePagination()
     } else {
       ElMessage.error('获取房间状态数据失败')
       filteredRoomList.value = []
+      paginatedRoomList.value = []
+      total.value = 0
     }
   } catch (error) {
-    console.error('加载房间状态数据失败:', error)
     ElMessage.error('加载房间状态数据失败')
     filteredRoomList.value = []
+    paginatedRoomList.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
@@ -287,7 +322,6 @@ const loadBranches = async () => {
 
 // 页面初始化
 onMounted(async () => {
-  console.log('房间状态页面 onMounted')
   // 先加载分店数据，再加载状态统计
   await loadBranches()
   loadStatusStatistics()
@@ -295,7 +329,6 @@ onMounted(async () => {
 
 // 页面重新激活时刷新数据（从其他页面返回时）
 onActivated(async () => {
-  console.log('房间状态页面 onActivated')
   // 先加载分店数据，再加载状态统计
   await loadBranches()
   loadStatusStatistics()
@@ -396,6 +429,11 @@ onActivated(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.pagination-container {
+  margin-top: 15px;
+  text-align: right;
 }
 
 /* 响应式设计 */
