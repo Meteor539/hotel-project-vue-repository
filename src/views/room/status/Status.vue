@@ -229,7 +229,7 @@ const formatRoomData = (room) => {
     roomNumber: room.roomNumber || room.roomNo || room.room_no || '',
     branchName: getBranchNameById(room.branchId || room.branch_id) || room.branchName || room.branch_name || '未知分店',
     roomType: room.roomType || room.room_type || '',
-    facilities: room.facilities || room.roomFacilities || room.room_facilities || '',
+    facilities: room.facilities || room.roomFacilities || room.room_facilities || '无',
     status: room.status || room.roomStatus || room.room_status || '未入住',
     remark: room.remark || room.roomRemark || room.room_remark || '',
     createTime: formatDateTime(room.createTime || room.createdTime || room.createDate || room.create_time)

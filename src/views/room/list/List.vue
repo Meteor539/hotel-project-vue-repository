@@ -64,7 +64,7 @@
             {{ scope.row.facilities || '无' }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="房间状态" width="100">
+        <el-table-column prop="status" label="房间状态" width="115">
           <template #default="scope">
             <el-tag
               :type="getStatusTagType(scope.row.status)"
@@ -76,7 +76,7 @@
         </el-table-column>
         <el-table-column prop="remark" label="备注说明" min-width="200" show-overflow-tooltip />
         <!-- <el-table-column prop="createTime" label="创建时间" width="180" /> -->
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="170" fixed="right">
           <template #default="scope">
             <el-button type="primary" size="small" :icon="EditPen" @click="handleEdit(scope.row)">修 改</el-button>
             <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">删 除</el-button>

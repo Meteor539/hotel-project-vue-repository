@@ -159,12 +159,11 @@ const loadRoomDetail = async (id) => {
     console.log('进入编辑模式，房间ID:', id)
 
     const res = await getRoomByIdAPI(id)
-    console.log('房间列表API响应:', res)
+    console.log('房间详情API响应:', res)
 
-    // 从房间列表中筛选出特定ID的房间
-    if (res && res.code === 1 && res.data && res.data.records) {
-      const roomList = res.data.records
-      const roomData = roomList.find(room => room.roomId == id)
+    // 根据新的API文档，直接从data中获取房间数据
+    if (res && res.code === 1 && res.data) {
+      const roomData = res.data
 
       if (roomData) {
         console.log('找到房间数据:', roomData)
@@ -221,14 +220,13 @@ const handleSubmit = async () => {
     if (isEdit.value) {
       // 准备更新数据，将表单字段映射为API期望的字段
       const updateData = {
-        id: formData.id,
-        roomNumber: formData.roomNumber,
+        roomId: formData.id,
         branchId: formData.branchId,
+        roomNo: formData.roomNumber,
         roomType: formData.roomType,
-        facilities: formData.facilities,
-        status: formData.status,
-        remark: formData.remark,
-        photo: formData.photo
+        roomFacilities: formData.facilities,
+        roomStatus: formData.status,
+        roomRemark: formData.remark
       }
 
       console.log('提交更新数据:', updateData)
@@ -237,13 +235,12 @@ const handleSubmit = async () => {
     } else {
       // 新增模式，准备新增数据
       const addData = {
-        roomNumber: formData.roomNumber,
         branchId: formData.branchId,
+        roomNo: formData.roomNumber,
         roomType: formData.roomType,
-        facilities: formData.facilities,
-        status: formData.status,
-        remark: formData.remark,
-        photo: formData.photo
+        roomFacilities: formData.facilities,
+        roomStatus: formData.status,
+        roomRemark: formData.remark
       }
 
       console.log('提交新增数据:', addData)
