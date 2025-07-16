@@ -16,6 +16,7 @@ import RoomStatus from '@/views/room/status/status.vue'
 // 用户管理
 import User from '@/views/user/User.vue'
 import UserList from '@/views/user/list/list.vue'
+import UserAdd from '@/views/user/add/add.vue'
 import UserAdmin from '@/views/user/admin/admin.vue'
 
 
@@ -75,6 +76,11 @@ const router = createRouter({
             {
               path:"list",
               component:UserList,
+              meta: { requiresAuth: true }
+            },
+            {
+              path:"add",
+              component:UserAdd,
               meta: { requiresAuth: true }
             },
             {

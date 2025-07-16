@@ -36,6 +36,7 @@
             <span>用户管理</span>
           </template>
           <el-menu-item index="/user/list">用户列表</el-menu-item>
+          <el-menu-item index="/user/add" style="display: none;">新增用户</el-menu-item>
           <el-menu-item index="/user/admin">管理员</el-menu-item>
         </el-sub-menu>
       </el-menu>
