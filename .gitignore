@@ -40,3 +40,5 @@ Summary/
 *.gitignore
 
 .gitignore
+
+else/
