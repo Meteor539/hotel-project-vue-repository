@@ -36,7 +36,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="userId" label="用户ID" width="100" />
         <el-table-column prop="userName" label="用户名" />
-        <el-table-column prop="userRole" label="用户角色" width="200">
+        <el-table-column prop="userRole" label="用户角色" width="300">
           <template #default="scope">
             <el-tag
               :type="scope.row.userRole === 'admin' ? 'danger' : scope.row.userRole === 'manager' ? 'warning' : 'info'"
@@ -45,18 +45,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="updateTime" label="更新时间" width="180">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.updateTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdBy" label="创建人" width="100" />
-        <el-table-column prop="updatedBy" label="更新人" width="100" />
+
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button type="primary" size="small" :icon="EditPen" @click="editUser(scope.row)">修 改</el-button>
@@ -77,7 +66,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditPen, Delete, Plus } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getPagedUsersListAPI, deleteUserAPI } from '@/apis/userAPI'
+import { getPagedUsersListAPI, deleteUserAPI } from '@/apis/authAPI'
 import Page from '@/components/Page.vue'
 
 // 路由实例
@@ -97,6 +86,10 @@ const pageSize = ref(8)
 const loading = ref(false)
 const selectedUsers = ref([])
 
+// 搜索相关数据
+const allUsersData = ref([]) // 存储所有用户数据用于搜索过滤
+const isSearchMode = ref(false) // 标识当前是否在搜索模式
+
 // 获取角色文本
 const getRoleText = (role) => {
   const roleMap = {
@@ -107,67 +100,9 @@ const getRoleText = (role) => {
   return roleMap[role] || role
 }
 
-// 格式化日期时间
-const formatDateTime = (dateTime) => {
-  if (!dateTime) return ''
-  const date = new Date(dateTime)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
 
-// 模拟数据（当API调用失败时使用）
-const mockUserData = [
-  {
-    userId: 1,
-    userName: 'admin',
-    userRole: 'admin',
-    createTime: '2024-01-15 10:30:00',
-    updateTime: '2024-01-15 10:30:00',
-    createdBy: '000001',
-    updatedBy: '000001'
-  },
-  {
-    userId: 2,
-    userName: 'manager01',
-    userRole: 'manager',
-    createTime: '2024-01-16 09:15:00',
-    updateTime: '2024-01-16 09:15:00',
-    createdBy: '000001',
-    updatedBy: '000001'
-  },
-  {
-    userId: 3,
-    userName: 'user001',
-    userRole: 'user',
-    createTime: '2024-01-17 14:20:00',
-    updateTime: '2024-01-17 14:20:00',
-    createdBy: '000001',
-    updatedBy: '000001'
-  },
-  {
-    userId: 4,
-    userName: 'manager02',
-    userRole: 'manager',
-    createTime: '2024-01-18 11:45:00',
-    updateTime: '2024-01-18 11:45:00',
-    createdBy: '000001',
-    updatedBy: '000001'
-  },
-  {
-    userId: 5,
-    userName: 'user002',
-    userRole: 'user',
-    createTime: '2024-01-19 16:30:00',
-    updateTime: '2024-01-19 16:30:00',
-    createdBy: '000001',
-    updatedBy: '000001'
-  }
-]
+
+
 
 // 加载分页用户列表
 const loadPagedUsers = async (pageNo = 1, size = 8) => {
@@ -175,41 +110,21 @@ const loadPagedUsers = async (pageNo = 1, size = 8) => {
     loading.value = true
     console.log(`正在加载第${pageNo}页用户数据，每页${size}条`)
 
-    try {
-      const res = await getPagedUsersListAPI(pageNo)
-      console.log('用户列表API响应:', res)
+    const res = await getPagedUsersListAPI(pageNo)
+    console.log('用户列表API响应:', res)
 
-      if (res && res.code === 1 && res.data) {
-        // 处理分页数据 - 根据API响应结构调整
-        const pageData = res.data
-        userList.value = pageData.records || pageData.list || pageData || []
-        total.value = pageData.total || pageData.totalCount || userList.value.length
-        currPageNo.value = pageData.current || pageData.pageNo || pageNo
+    if (res && res.code === 1 && res.data) {
+      // 处理分页数据 - 根据API响应结构调整
+      const pageData = res.data
+      userList.value = pageData.records || pageData.list || pageData || []
+      total.value = pageData.total || pageData.totalCount || userList.value.length
+      currPageNo.value = pageData.current || pageData.pageNo || pageNo
 
-        console.log('用户列表数据:', userList.value)
-        console.log('总记录数:', total.value)
-        return
-      }
-    } catch (apiError) {
-      console.warn('API调用失败，使用模拟数据:', apiError)
+      console.log('用户列表数据:', userList.value)
+      console.log('总记录数:', total.value)
+    } else {
+      throw new Error(res?.msg || '获取用户列表失败')
     }
-
-    // API调用失败时使用模拟数据
-    console.log('使用模拟数据进行展示')
-    ElMessage.info('后端服务暂不可用，显示模拟数据')
-
-    // 模拟分页逻辑
-    const startIndex = (pageNo - 1) * size
-    const endIndex = startIndex + size
-    const filteredData = filterMockData()
-    const pageData = filteredData.slice(startIndex, endIndex)
-
-    userList.value = pageData
-    total.value = filteredData.length
-    currPageNo.value = pageNo
-
-    console.log('模拟用户列表数据:', userList.value)
-    console.log('模拟总记录数:', total.value)
 
   } catch (error) {
     console.error('加载用户列表失败:', error)
@@ -221,46 +136,164 @@ const loadPagedUsers = async (pageNo = 1, size = 8) => {
   }
 }
 
-// 过滤模拟数据（根据搜索条件）
-const filterMockData = () => {
-  let filteredData = [...mockUserData]
 
-  // 按用户名过滤
-  if (searchForm.userName) {
-    filteredData = filteredData.filter(user =>
-      user.userName.toLowerCase().includes(searchForm.userName.toLowerCase())
-    )
-  }
-
-  // 按用户角色过滤
-  if (searchForm.userRole) {
-    filteredData = filteredData.filter(user => user.userRole === searchForm.userRole)
-  }
-
-  return filteredData
-}
 
 // 分页组件回调
 const setCurrentPageNo = (pageNo) => {
   console.log('切换到第', pageNo, '页')
   currPageNo.value = pageNo
-  loadPagedUsers(pageNo, pageSize.value)
+
+  if (isSearchMode.value) {
+    // 搜索模式下，重新执行搜索以获取对应页的数据
+    loadUsersWithSearch()
+  } else {
+    // 正常模式下，加载对应页的数据
+    loadPagedUsers(pageNo, pageSize.value)
+  }
 }
 
 // 搜索用户
-const searchUsers = () => {
+const searchUsers = async () => {
   console.log('搜索条件:', searchForm)
-  // 重置到第一页
+
+  // 检查是否有搜索条件
+  const hasSearchCondition = searchForm.userName.trim() || searchForm.userRole
+
+  if (!hasSearchCondition) {
+    // 没有搜索条件，回到正常分页模式
+    isSearchMode.value = false
+    currPageNo.value = 1
+    loadPagedUsers(1, pageSize.value)
+    return
+  }
+
+  // 有搜索条件，进入搜索模式
+  isSearchMode.value = true
   currPageNo.value = 1
-  loadPagedUsers(1, pageSize.value)
+  await loadUsersWithSearch()
 }
 
 // 重置搜索
 const resetSearch = () => {
   searchForm.userName = ''
   searchForm.userRole = ''
+  isSearchMode.value = false
   currPageNo.value = 1
   loadPagedUsers(1, pageSize.value)
+}
+
+// 带搜索条件的用户加载
+const loadUsersWithSearch = async () => {
+  try {
+    loading.value = true
+    console.log('执行搜索，条件:', searchForm)
+
+    // 由于AuthAPI只支持分页查询，我们获取前几页数据进行搜索
+    const pagePromises = []
+    for (let page = 1; page <= 5; page++) { // 获取前5页数据
+      pagePromises.push(getPagedUsersListAPI(page))
+    }
+
+    const pageResults = await Promise.all(pagePromises)
+    console.log('搜索用户API响应:', pageResults)
+
+    // 合并所有页的数据
+    const allRecords = []
+    pageResults.forEach(pageRes => {
+      if (pageRes && pageRes.code === 1 && pageRes.data) {
+        const records = pageRes.data.records || pageRes.data.list || pageRes.data || []
+        if (Array.isArray(records)) {
+          allRecords.push(...records)
+        }
+      }
+    })
+
+    // 构造统一的响应格式
+    const res = {
+      data: allRecords
+    }
+
+    if (allRecords.length > 0) {
+      // 处理搜索结果数据
+      handleSearchResultData(res)
+    } else {
+      throw new Error('未获取到用户数据')
+    }
+
+  } catch (error) {
+    console.error('搜索用户失败:', error)
+    ElMessage.error('搜索用户失败')
+    userList.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
+// 处理搜索结果数据
+const handleSearchResultData = (res) => {
+  const records = Array.isArray(res.data) ? res.data : []
+
+  if (records.length > 0) {
+    // 去重处理（因为可能从多页获取到重复数据）
+    const uniqueRecords = []
+    const seenIds = new Set()
+
+    records.forEach(user => {
+      const userId = user.userId || user.user_id
+      if (userId && !seenIds.has(userId)) {
+        seenIds.add(userId)
+        uniqueRecords.push(user)
+      }
+    })
+
+    // 存储所有数据
+    allUsersData.value = uniqueRecords
+
+    // 应用前端过滤
+    let filteredRecords = uniqueRecords.filter(user => {
+      let match = true
+
+      // 用户名过滤（模糊匹配）
+      if (searchForm.userName && searchForm.userName.trim()) {
+        const userName = user.userName || user.user_name || ''
+        match = match && userName.toLowerCase().includes(searchForm.userName.toLowerCase())
+      }
+
+      // 用户角色过滤（精确匹配）
+      if (searchForm.userRole && searchForm.userRole.trim()) {
+        const userRole = user.userRole || user.user_role || ''
+        match = match && (userRole === searchForm.userRole)
+      }
+
+      return match
+    })
+
+    // 前端分页处理
+    const startIndex = (currPageNo.value - 1) * pageSize.value
+    const endIndex = startIndex + pageSize.value
+    const paginatedRecords = filteredRecords.slice(startIndex, endIndex)
+
+    userList.value = paginatedRecords
+    total.value = filteredRecords.length
+
+    console.log('搜索结果:', {
+      total: filteredRecords.length,
+      currentPage: paginatedRecords.length,
+      searchConditions: searchForm
+    })
+
+    // 搜索结果提示
+    if (filteredRecords.length === 0) {
+      ElMessage.info('未找到符合条件的用户')
+    } else {
+      ElMessage.success(`找到 ${filteredRecords.length} 个符合条件的用户`)
+    }
+  } else {
+    userList.value = []
+    total.value = 0
+    ElMessage.info('未找到符合条件的用户')
+  }
 }
 
 // 新增用户
@@ -316,20 +349,9 @@ const handleBatchDelete = async () => {
 
     console.log('批量删除用户:', selectedUsers.value)
 
-    try {
-      // 尝试调用删除API
-      for (const user of selectedUsers.value) {
-        await deleteUserAPI(user.userId)
-      }
-    } catch (apiError) {
-      console.warn('API删除失败，使用模拟删除:', apiError)
-      // 从模拟数据中删除
-      const selectedIds = selectedUsers.value.map(user => user.userId)
-      for (let i = mockUserData.length - 1; i >= 0; i--) {
-        if (selectedIds.includes(mockUserData[i].userId)) {
-          mockUserData.splice(i, 1)
-        }
-      }
+    // 调用删除API
+    for (const user of selectedUsers.value) {
+      await deleteUserAPI(user.userId)
     }
 
     // 显示成功提示
@@ -371,36 +393,18 @@ const deleteUser = async (user) => {
 
     console.log('删除用户:', user.userName)
 
-    try {
-      const res = await deleteUserAPI(user.userId)
-      console.log('删除用户API响应:', res)
+    const res = await deleteUserAPI(user.userId)
+    console.log('删除用户API响应:', res)
 
-      if (res && res.code === 1) {
-        // 显示成功提示
-        ElMessage({
-          message: '删除用户成功',
-          type: 'success',
-          duration: 2000
-        })
-      } else {
-        throw new Error(res?.msg || '删除用户失败')
-      }
-    } catch (apiError) {
-      console.warn('API删除失败，使用模拟删除:', apiError)
-      // 从模拟数据中删除
-      const index = mockUserData.findIndex(item => item.userId === user.userId)
-      if (index > -1) {
-        mockUserData.splice(index, 1)
-        // 显示成功提示
-        ElMessage({
-          message: '删除用户成功',
-          type: 'success',
-          duration: 2000
-        })
-      } else {
-        ElMessage.error('用户不存在')
-        return
-      }
+    if (res && res.code === 1) {
+      // 显示成功提示
+      ElMessage({
+        message: '删除用户成功',
+        type: 'success',
+        duration: 2000
+      })
+    } else {
+      throw new Error(res?.msg || '删除用户失败')
     }
 
     // 重新加载当前页数据

@@ -43,7 +43,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { addUserAPI, updateUserAPI, getUserByIdAPI } from '@/apis/userAPI'
+import { addUserAPI, updateUserAPI, getUserByIdAPI } from '@/apis/authAPI'
 
 const router = useRouter()
 const route = useRoute()
@@ -140,24 +140,19 @@ const submitForm = () => {
 
         console.log('提交数据:', submitData)
 
-        try {
-          let res
-          if (isEdit.value) {
-            res = await updateUserAPI(submitData)
-          } else {
-            res = await addUserAPI(submitData)
-          }
+        let res
+        if (isEdit.value) {
+          res = await updateUserAPI(submitData)
+        } else {
+          res = await addUserAPI(submitData)
+        }
 
-          console.log('提交API响应:', res)
+        console.log('提交API响应:', res)
 
-          if (res && res.code === 1) {
-            ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
-          } else {
-            throw new Error(res?.msg || (isEdit.value ? '更新失败' : '添加失败'))
-          }
-        } catch (apiError) {
-          console.warn('API调用失败，模拟操作成功:', apiError)
-          ElMessage.success(isEdit.value ? '更新成功（模拟）' : '添加成功（模拟）')
+        if (res && res.code === 1) {
+          ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
+        } else {
+          throw new Error(res?.msg || (isEdit.value ? '更新失败' : '添加失败'))
         }
 
         // 延迟跳转，确保提示消息显示

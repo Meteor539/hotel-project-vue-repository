@@ -80,7 +80,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, UserFilled, Avatar, Setting, List, Plus, Refresh } from '@element-plus/icons-vue'
-import { getAllUsersAPI, getUsersByRoleAPI } from '@/apis/userAPI'
+import { getPagedUsersListAPI } from '@/apis/authAPI'
 
 const router = useRouter()
 
@@ -120,64 +120,63 @@ const statsData = ref([
   }
 ])
 
-// 模拟用户数据
-const mockUsers = [
-  { userId: 1, userName: 'admin', userRole: 'admin' },
-  { userId: 2, userName: 'manager01', userRole: 'manager' },
-  { userId: 3, userName: 'user001', userRole: 'user' },
-  { userId: 4, userName: 'manager02', userRole: 'manager' },
-  { userId: 5, userName: 'user002', userRole: 'user' }
-]
+
 
 // 加载统计数据
 const loadStats = async () => {
   try {
-    try {
-      // 尝试获取所有用户数据
-      const res = await getAllUsersAPI()
-      console.log('用户统计API响应:', res)
-
-      if (res && res.code === 1 && res.data) {
-        const users = res.data.records || res.data.list || res.data || []
-
-        // 统计各类用户数量
-        const totalCount = users.length
-        const adminCount = users.filter(user => user.userRole === 'admin').length
-        const managerCount = users.filter(user => user.userRole === 'manager').length
-        const userCount = users.filter(user => user.userRole === 'user').length
-
-        // 更新统计数据
-        statsData.value[0].count = totalCount
-        statsData.value[1].count = adminCount
-        statsData.value[2].count = managerCount
-        statsData.value[3].count = userCount
-
-        console.log('用户统计:', { totalCount, adminCount, managerCount, userCount })
-        return
-      }
-    } catch (apiError) {
-      console.warn('API调用失败，使用模拟数据:', apiError)
+    // 由于AuthAPI只支持分页查询，我们获取前几页数据进行统计
+    const pagePromises = []
+    for (let page = 1; page <= 5; page++) { // 获取前5页数据
+      pagePromises.push(getPagedUsersListAPI(page))
     }
 
-    // API调用失败时使用模拟数据
-    console.log('使用模拟数据进行统计')
-    const users = mockUsers
+    const pageResults = await Promise.all(pagePromises)
+    console.log('用户统计API响应:', pageResults)
 
-    // 统计各类用户数量
-    const totalCount = users.length
-    const adminCount = users.filter(user => user.userRole === 'admin').length
-    const managerCount = users.filter(user => user.userRole === 'manager').length
-    const userCount = users.filter(user => user.userRole === 'user').length
+    // 合并所有页的数据
+    const allUsers = []
+    pageResults.forEach(pageRes => {
+      if (pageRes && pageRes.code === 1 && pageRes.data) {
+        const records = pageRes.data.records || pageRes.data.list || pageRes.data || []
+        if (Array.isArray(records)) {
+          allUsers.push(...records)
+        }
+      }
+    })
 
-    // 更新统计数据
-    statsData.value[0].count = totalCount
-    statsData.value[1].count = adminCount
-    statsData.value[2].count = managerCount
-    statsData.value[3].count = userCount
+    // 去重处理（因为可能从多页获取到重复数据）
+    const uniqueUsers = []
+    const seenIds = new Set()
 
-    console.log('模拟用户统计:', { totalCount, adminCount, managerCount, userCount })
+    allUsers.forEach(user => {
+      const userId = user.userId || user.user_id
+      if (userId && !seenIds.has(userId)) {
+        seenIds.add(userId)
+        uniqueUsers.push(user)
+      }
+    })
+
+    if (uniqueUsers.length > 0) {
+      // 统计各类用户数量
+      const totalCount = uniqueUsers.length
+      const adminCount = uniqueUsers.filter(user => user.userRole === 'admin').length
+      const managerCount = uniqueUsers.filter(user => user.userRole === 'manager').length
+      const userCount = uniqueUsers.filter(user => user.userRole === 'user').length
+
+      // 更新统计数据
+      statsData.value[0].count = totalCount
+      statsData.value[1].count = adminCount
+      statsData.value[2].count = managerCount
+      statsData.value[3].count = userCount
+
+      console.log('用户统计:', { totalCount, adminCount, managerCount, userCount })
+    } else {
+      throw new Error('未获取到用户数据')
+    }
   } catch (error) {
     console.error('加载用户统计失败:', error)
+    ElMessage.error('加载用户统计失败')
     // 使用默认值
     statsData.value.forEach(stat => stat.count = 0)
   }

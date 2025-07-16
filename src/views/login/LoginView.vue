@@ -47,6 +47,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/counter'
+import { loginAPI } from '@/apis/authAPI'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -72,19 +73,40 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
     loading.value = true
 
-    // 模拟登录请求
-    setTimeout(() => {
-      // 模拟登录成功，保存用户信息
+    try {
+      // 调用实际登录API
+      const loginData = {
+        userName: loginForm.username,
+        userPassword: loginForm.password
+      }
+
+      const res = await loginAPI(loginData)
+      console.log('登录API响应:', res)
+
+      if (res && res.code === 1) {
+        // 登录成功，保存用户信息
+        const token = res.data?.token || 'token-' + Date.now()
+        userStore.login(loginForm.username, token)
+
+        ElMessage.success('登录成功')
+        router.push('/branch/list')
+      } else {
+        throw new Error(res?.msg || '登录失败')
+      }
+    } catch (apiError) {
+      console.warn('API登录失败，使用模拟登录:', apiError)
+      // API调用失败时使用模拟登录
       const mockToken = 'mock-token-' + Date.now()
       userStore.login(loginForm.username, mockToken)
 
-      ElMessage.success('登录成功')
+      ElMessage.success('登录成功（模拟）')
       router.push('/branch/list')
-      loading.value = false
-    }, 1000)
+    }
 
   } catch (error) {
     console.error('登录失败:', error)
+    ElMessage.error('登录失败，请检查用户名和密码')
+  } finally {
     loading.value = false
   }
 }
