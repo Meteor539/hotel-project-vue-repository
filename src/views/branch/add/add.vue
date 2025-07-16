@@ -89,16 +89,15 @@ const handleSubmit = async () => {
 
       // 显示成功提示
       ElMessage({
-        message: '修改分店成功',
+        message: '修改分店成功！',
         type: 'success',
-        duration: 2000,
-        showClose: true
+        duration: 2000
       })
 
       // 延迟跳转，确保提示消息显示
       setTimeout(() => {
         router.push('/branch/list')
-      }, 1500)
+      }, 2000)
     } else {
       // 新增模式，准备新增数据
       const addData = {
@@ -115,27 +114,21 @@ const handleSubmit = async () => {
 
       // 显示成功提示
       ElMessage({
-        message: '新增分店成功',
+        message: '新增分店成功！',
         type: 'success',
-        duration: 2000,
-        showClose: true
+        duration: 2000
       })
 
       // 延迟跳转，确保提示消息显示
       setTimeout(() => {
         router.push('/branch/list')
-      }, 1500)
+      }, 2000)
     }
   } catch (error) {
     console.error(isEdit.value ? '更新分店失败:' : '新增分店失败:', error)
 
     // 显示错误提示
-    ElMessage({
-      message: isEdit.value ? '修改分店失败，请重试' : '新增分店失败，请重试',
-      type: 'error',
-      duration: 3000,
-      showClose: true
-    })
+    ElMessage.error(isEdit.value ? '修改分店失败，请重试' : '新增分店失败，请重试')
   }
 }
 

@@ -44,10 +44,6 @@
         <el-button type="warning" :icon="Plus" @click="handleAdd">新增房间</el-button>
         <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除</el-button>
       </div>
-      <!-- <div class="operation-buttons">
-        <el-button type="warning" :icon="Plus" @click="handleAdd">新增房间</el-button>
-        <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除</el-button>
-      </div> -->
 
       <!-- 房间列表表格 -->
       <el-table
@@ -106,7 +102,6 @@ import {
   deleteRoomAPI,
   getRoomsByTypeAPI,
   getRoomsByStatusAPI,
-  getRoomsByBranchNameAPI,
   getRoomsByBranchIdAPI
 } from '@/apis/roomAPI'
 import { getAllBranchesAPI } from '@/apis/branchAPI'
@@ -197,8 +192,7 @@ const handleDelete = async (row) => {
     ElMessage({
       message: '删除房间成功',
       type: 'success',
-      duration: 2000,
-      showClose: true
+      duration: 2000
     })
 
     // 刷新数据
@@ -209,14 +203,8 @@ const handleDelete = async (row) => {
     }
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('删除失败:', error)
       // 显示错误提示
-      ElMessage({
-        message: '删除房间失败，请重试',
-        type: 'error',
-        duration: 3000,
-        showClose: true
-      })
+      ElMessage.error('删除房间失败，请重试')
     }
   }
 }
@@ -227,8 +215,7 @@ const handleBatchDelete = async () => {
     ElMessage({
       message: '请选择要删除的房间',
       type: 'warning',
-      duration: 2000,
-      showClose: true
+      duration: 2000
     })
     return
   }
@@ -259,8 +246,7 @@ const handleBatchDelete = async () => {
     ElMessage({
       message: '批量删除成功',
       type: 'success',
-      duration: 2000,
-      showClose: true
+      duration: 2000
     })
 
     // 刷新数据
@@ -271,14 +257,8 @@ const handleBatchDelete = async () => {
     }
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('批量删除失败:', error)
       // 显示错误提示
-      ElMessage({
-        message: '批量删除失败，请重试',
-        type: 'error',
-        duration: 3000,
-        showClose: true
-      })
+      ElMessage.error('批量删除失败，请重试')
     }
   }
 }
@@ -333,54 +313,41 @@ const loadRoomsWithSearch = async () => {
     loading.value = true;
     let res = null;
 
-    console.log('开始搜索，条件:', searchForm);
-
     // 智能选择API策略：优先使用最具体的单一条件API
     if (searchForm.roomType && !searchForm.branchId && !searchForm.status && !searchForm.roomNumber) {
       // 仅按房间类型搜索
-      console.log('使用房间类型API');
       res = await getRoomsByTypeAPI(searchForm.roomType);
     } else if (searchForm.status && !searchForm.branchId && !searchForm.roomType && !searchForm.roomNumber) {
       // 仅按房间状态搜索
-      console.log('使用房间状态API');
       res = await getRoomsByStatusAPI(searchForm.status);
     } else if (searchForm.branchId && !searchForm.roomType && !searchForm.status && !searchForm.roomNumber) {
       // 仅按分店ID搜索
-      console.log('使用分店ID API');
       res = await getRoomsByBranchIdAPI(searchForm.branchId);
     } else if (searchForm.roomType && searchForm.status && !searchForm.branchId && !searchForm.roomNumber) {
       // 房间类型 + 房间状态：优先用状态API，然后过滤类型
-      console.log('使用房间状态API + 类型过滤');
       res = await getRoomsByStatusAPI(searchForm.status);
     } else if (searchForm.branchId && searchForm.roomType && !searchForm.status && !searchForm.roomNumber) {
       // 分店ID + 房间类型：优先用分店API，然后过滤类型
-      console.log('使用分店ID API + 类型过滤');
       res = await getRoomsByBranchIdAPI(searchForm.branchId);
     } else if (searchForm.branchId && searchForm.status && !searchForm.roomType && !searchForm.roomNumber) {
       // 分店ID + 房间状态：优先用分店API，然后过滤状态
-      console.log('使用分店ID API + 状态过滤');
       res = await getRoomsByBranchIdAPI(searchForm.branchId);
     } else {
       // 复合搜索条件或包含房间号搜索
       // 对于复合条件，我们需要获取更多数据来进行前端过滤
-      console.log('复合搜索条件，使用扩展数据获取策略');
 
       // 优先选择一个能返回较多数据的单一API，然后在前端过滤其他条件
       if (searchForm.branchId) {
         // 如果有分店条件，优先使用分店API（通常分店内房间数量相对较少）
-        console.log('使用分店ID API + 多条件前端过滤');
         res = await getRoomsByBranchIdAPI(searchForm.branchId);
       } else if (searchForm.status) {
         // 如果有状态条件，使用状态API
-        console.log('使用房间状态API + 多条件前端过滤');
         res = await getRoomsByStatusAPI(searchForm.status);
       } else if (searchForm.roomType) {
         // 如果有类型条件，使用类型API
-        console.log('使用房间类型API + 多条件前端过滤');
         res = await getRoomsByTypeAPI(searchForm.roomType);
       } else {
         // 如果只有房间号条件，使用分页API获取更多页数据
-        console.log('使用扩展分页API + 前端过滤');
         // 获取前几页的数据以增加找到匹配房间的概率
         const pagePromises = [];
         for (let page = 1; page <= 5; page++) { // 获取前5页数据
@@ -405,15 +372,12 @@ const loadRoomsWithSearch = async () => {
 
     if (res && res.data) {
       // 处理搜索结果数据
-      console.log('搜索API返回数据:', res);
       handleSearchResultData(res);
     } else {
-      console.error('搜索API返回数据异常:', res);
       ElMessage.error('搜索房间列表失败')
     }
 
   } catch (error) {
-    console.error('搜索房间数据失败:', error);
     ElMessage.error('搜索房间数据失败')
   } finally {
     loading.value = false;
@@ -439,9 +403,6 @@ const handleSearchResultData = (res) => {
     }
   }
 
-  console.log('搜索原始数据:', records);
-  console.log('当前搜索条件:', searchForm);
-
   if (Array.isArray(records)) {
     // 应用前端过滤
     let filteredRecords = records.filter(room => {
@@ -451,38 +412,28 @@ const handleSearchResultData = (res) => {
       if (searchForm.roomNumber && searchForm.roomNumber.trim()) {
         const roomNo = room.roomNo || room.roomNumber || '';
         match = match && roomNo.toLowerCase().includes(searchForm.roomNumber.toLowerCase());
-        console.log(`房间号过滤: ${roomNo} 包含 ${searchForm.roomNumber} = ${match}`);
       }
 
       // 分店ID过滤
       if (searchForm.branchId) {
         const roomBranchId = room.branchId || room.branch_id;
         match = match && (roomBranchId == searchForm.branchId);
-        console.log(`分店ID过滤: ${roomBranchId} == ${searchForm.branchId} = ${match}`);
       }
 
       // 房间类型过滤
       if (searchForm.roomType && searchForm.roomType.trim()) {
         const roomType = room.roomType || room.room_type;
         match = match && (roomType === searchForm.roomType);
-        console.log(`房间类型过滤: ${roomType} == ${searchForm.roomType} = ${match}`);
       }
 
       // 房间状态过滤
       if (searchForm.status && searchForm.status.trim()) {
         const roomStatus = room.roomStatus || room.status || room.room_status;
         match = match && (roomStatus === searchForm.status);
-        console.log(`房间状态过滤: ${roomStatus} == ${searchForm.status} = ${match}`);
-      }
-
-      if (match) {
-        console.log('匹配的房间:', room);
       }
 
       return match;
     });
-
-    console.log('过滤后的数据:', filteredRecords);
 
     // 前端分页处理
     const startIndex = (currPageNo.value - 1) * pageSize.value;
@@ -491,8 +442,6 @@ const handleSearchResultData = (res) => {
 
     // 格式化数据
     const formattedRecords = paginatedRecords.map(formatRoomData);
-
-    console.log('最终显示的数据:', formattedRecords);
 
     roomList.value = formattedRecords;
     total.value = filteredRecords.length;
@@ -517,7 +466,6 @@ const loadPagedRooms = async (pageNo, size = pageSize.value) => {
     }
 
   } catch (error) {
-    console.error('加载房间数据失败:', error);
     ElMessage.error('加载房间数据失败')
   } finally {
     loading.value = false;
@@ -593,7 +541,7 @@ const handleRealApiData = (res, size) => {
 const loadBranches = async () => {
   try {
     const res = await getAllBranchesAPI()
-    console.log('分店API响应:', res)
+
 
     let branches = []
 
@@ -611,7 +559,6 @@ const loadBranches = async () => {
       // 数据直接在data字段中
       branches = res.data
     } else {
-      console.error('分店API响应格式不正确:', res)
       branches = []
     }
 
@@ -621,16 +568,13 @@ const loadBranches = async () => {
       name: branch.name || branch.branchName || branch.branch_name || `分店${branch.id || '未知'}`
     }))
 
-    console.log('处理后的分店列表:', branchList.value)
   } catch (error) {
-    console.error('加载分店列表失败:', error)
     branchList.value = []
   }
 }
 
 // 页面初始化
 onMounted(async () => {
-  console.log('房间列表页面 onMounted')
   // 先加载分店数据，再加载房间数据
   await loadBranches()
   loadPagedRooms(currPageNo.value, pageSize.value)
@@ -638,7 +582,6 @@ onMounted(async () => {
 
 // 页面重新激活时刷新数据（从其他页面返回时）
 onActivated(async () => {
-  console.log('房间列表页面 onActivated')
   // 先加载分店数据，再加载房间数据
   await loadBranches()
   loadPagedRooms(currPageNo.value, pageSize.value)

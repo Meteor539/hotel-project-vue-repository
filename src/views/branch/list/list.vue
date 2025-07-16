@@ -56,8 +56,6 @@
         <Page :psize="pageSize" :total="total" @setCurrentPageNo="setCurrentPageNo"></Page>
       </div>
     </div>
-
-
   </div>
 </template>
 
@@ -99,13 +97,11 @@ const currPageNo = ref(1)
 const setCurrentPageNo = (pageNo)=>{
   currPageNo.value = pageNo;
   currentPage.value = pageNo; // 同步当前页码
-  console.log("list.vue",pageNo,currPageNo.value);
   loadPagedBranches(pageNo);
 }
 
 // 搜索功能
 const handleSearch = () => {
-  console.log('搜索', searchForm)
   currentPage.value = 1 // 重置到第一页
   currPageNo.value = 1
   loadPagedBranches(1)
@@ -165,20 +161,14 @@ const handleDelete = async (row) => {
     ElMessage({
       message: '删除分店成功',
       type: 'success',
-      duration: 2000,
-      showClose: true
+      duration: 2000
     })
 
     loadPagedBranches(currPageNo.value)
   } catch (error) {
     if (error !== 'cancel') {
       // 显示错误提示
-      ElMessage({
-        message: '删除分店失败，请重试',
-        type: 'error',
-        duration: 3000,
-        showClose: true
-      })
+      ElMessage.error('删除分店失败，请重试')
     }
   }
 }
@@ -189,8 +179,7 @@ const handleBatchDelete = async () => {
     ElMessage({
       message: '请选择要删除的分店',
       type: 'warning',
-      duration: 2000,
-      showClose: true
+      duration: 2000
     })
     return
   }
@@ -221,20 +210,14 @@ const handleBatchDelete = async () => {
     ElMessage({
       message: '批量删除成功',
       type: 'success',
-      duration: 2000,
-      showClose: true
+      duration: 2000
     })
 
     loadPagedBranches(currPageNo.value)
   } catch (error) {
     if (error !== 'cancel') {
       // 显示错误提示
-      ElMessage({
-        message: '批量删除失败，请重试',
-        type: 'error',
-        duration: 3000,
-        showClose: true
-      })
+      ElMessage.error('批量删除失败，请重试')
     }
   }
 }

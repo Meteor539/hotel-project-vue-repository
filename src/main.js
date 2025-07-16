@@ -1,4 +1,6 @@
 import 'normalize.css/normalize.css'
+// 导入Element Plus样式
+import 'element-plus/dist/index.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
