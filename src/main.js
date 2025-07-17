@@ -8,7 +8,7 @@ import { ElMessage } from 'element-plus'
 
 import App from './App.vue'
 import router from './router'
-import { useUserStore } from './stores/counter'
+import { useUserStore } from './stores/user'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -21,6 +21,6 @@ app.config.globalProperties.$message = ElMessage
 
 // 初始化用户信息
 const userStore = useUserStore()
-userStore.initUserInfo()
+userStore.restoreUserState()
 
 app.mount('#app')

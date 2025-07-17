@@ -11,7 +11,7 @@
                     <el-dropdown @command="handleCommand">
                         <span class="user-info">
                             <el-icon><User /></el-icon>
-                            {{ userStore.userInfo.username || '未登录' }}
+                            {{ userStore.userInfo.userName || '未登录' }}
                             <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                         </span>
                         <template #dropdown>
@@ -33,7 +33,7 @@
    import {
     Expand, Fold, User, ArrowDown
    } from '@element-plus/icons-vue'
-   import { useUserStore } from '@/stores/counter'
+   import { useUserStore } from '@/stores/user'
    import { useRouter } from 'vue-router'
    import { ElMessage, ElMessageBox } from 'element-plus'
 

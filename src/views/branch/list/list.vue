@@ -62,9 +62,12 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const userStore = useUserStore()
 import { EditPen, Delete, Plus } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getPagedBranchesListAPI, deleteBranchAPI } from '@/apis/branchAPI'
+import { getPagedBranchesListAPI, deleteBranchAPI, getAllBranchesAPI } from '@/apis/branchAPI'
+import { useUserStore } from '@/stores/user'
 import Page from '@/components/Page.vue'
 
 // 路由实例
@@ -124,11 +127,21 @@ const handleReset = () => {
 
 // 新增分店 - 跳转到add页面
 const handleAdd = () => {
+  // 检查权限
+  if (!userStore.hasPermission('branch:create')) {
+    ElMessage.error('您没有新增分店的权限')
+    return
+  }
   router.push('/branch/add')
 }
 
 // 编辑分店 - 跳转到add页面并传递编辑数据
 const handleEdit = (row) => {
+  // 检查权限
+  if (!userStore.hasPermission('branch:update')) {
+    ElMessage.error('您没有编辑分店的权限')
+    return
+  }
   router.push({
     path: '/branch/add',
     query: {
@@ -140,6 +153,12 @@ const handleEdit = (row) => {
 
 // 删除分店
 const handleDelete = async (row) => {
+  // 检查权限
+  if (!userStore.hasPermission('branch:delete')) {
+    ElMessage.error('您没有删除分店的权限')
+    return
+  }
+
   try {
     await ElMessageBox.confirm(
       `您确定要删除分店"${row.name}"吗？删除后将无法恢复，请谨慎操作。`,
@@ -238,11 +257,12 @@ const loadPagedBranches = async (pageNo)=>{
     try {
         loading.value = true;
 
-        let res = await getPagedBranchesListAPI(pageNo);
+        // 使用RBAC版本的API获取用户可访问的分店列表
+        let res = await getAllBranchesAPI();
 
         if (res && res.data) {
-            // 处理真实API数据
-            handleRealApiData(res);
+            // 处理RBAC API数据 - 直接返回分店数组，需要手动分页
+            handleRbacApiData(res, pageNo);
         } else {
             ElMessage.error('获取分店列表失败')
         }
@@ -332,9 +352,63 @@ const applySearchFilter = (records) => {
     });
 }
 
-// 模拟数据处理函数已删除，现在只使用真实API数据
+// 处理RBAC API数据 - 手动分页
+const handleRbacApiData = (res, pageNo) => {
+    if (res.code === 1 || res.code === 200 || res.code === 0) {
+        // RBAC API直接返回分店数组
+        const allBranches = res.data || [];
 
-// 删除了对话框关闭处理函数
+        // 手动计算分页
+        const size = pageSize.value;
+        const start = (pageNo - 1) * size;
+        const end = start + size;
+
+        // 设置总数和当前页
+        total.value = allBranches.length;
+        currPageNo.value = pageNo;
+
+        // 获取当前页的数据
+        const currentPageData = allBranches.slice(start, end);
+
+        // 处理分店数据，确保字段名一致
+        const formattedRecords = currentPageData.map(branch => {
+            const formattedBranch = {
+                id: branch.id || branch.branchId || branch.branch_id,
+                name: branch.name || branch.branchName || branch.branch_name,
+                address: branch.address || branch.branchAddress || branch.branch_address,
+                phone: branch.phone || branch.branchPhone || branch.branch_phone,
+                roomCount: typeof branch.roomCount === 'string' ? branch.roomCount : (branch.roomCount || 0), // 处理"-"字符串
+                createTime: branch.createTime || branch.createdTime || branch.createDate || branch.create_time
+            };
+
+            // 格式化日期时间，与房间列表保持一致的格式
+            if (formattedBranch.createTime) {
+                const date = new Date(formattedBranch.createTime);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                formattedBranch.createTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+
+            return formattedBranch;
+        });
+
+        // 应用搜索过滤
+        const filteredRecords = applySearchFilter(formattedRecords);
+        tableData.value = filteredRecords;
+
+        // 如果有搜索条件，使用过滤后的数量；否则使用总数
+        const hasSearchConditions = searchForm.name || searchForm.address || searchForm.phone || searchForm.roomCount;
+        if (hasSearchConditions) {
+            total.value = filteredRecords.length;
+        }
+    } else {
+        ElMessage.error(res.msg || '获取分店列表失败');
+    }
+}
 
 // 生命周期
 onMounted(()=>{

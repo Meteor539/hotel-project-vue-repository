@@ -1,18 +1,17 @@
 <template>
   <div class="user">
     <div class="wrapper">
-      <div class="title">用户信息管理</div>
+      <div class="title">系统用户管理</div>
       <!-- 搜索表单 -->
       <div class="search-form">
         <el-form :model="searchForm" inline>
           <el-form-item label="用户名">
             <el-input v-model="searchForm.userName" placeholder="请输入用户名" clearable style="width: 200px" />
           </el-form-item>
-          <el-form-item label="用户角色">
-            <el-select v-model="searchForm.userRole" placeholder="请选择用户角色" clearable style="width: 200px">
-              <el-option label="管理员" value="admin" />
-              <el-option label="经理" value="manager" />
-              <el-option label="普通用户" value="user" />
+          <el-form-item label="用户状态">
+            <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 200px">
+              <el-option label="启用" value="1" />
+              <el-option label="禁用" value="0" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -27,36 +26,69 @@
       <!-- 用户列表表格 -->
       <el-table
         :data="userList"
-        style="width: 100%"
+        style="width: 100%; background: white;"
         v-loading="loading"
         @selection-change="handleSelectionChange"
         border
         stripe
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="userId" label="用户ID" width="100" />
-        <el-table-column prop="userName" label="用户名" />
-        <el-table-column prop="userRole" label="用户角色" width="300">
+        <el-table-column prop="id" label="用户ID" width="80" />
+        <el-table-column prop="userName" label="用户名" width="120" />
+        <el-table-column prop="realName" label="真实姓名" width="120" />
+        <el-table-column prop="email" label="邮箱" width="200" />
+        <el-table-column prop="phone" label="手机号" width="130" />
+        <el-table-column prop="roles" label="角色" width="200">
           <template #default="scope">
             <el-tag
-              :type="scope.row.userRole === 'admin' ? 'danger' : scope.row.userRole === 'manager' ? 'warning' : 'info'"
+              v-for="role in scope.row.roles"
+              :key="role.id"
+              :type="getRoleTagType(role.roleName)"
+              size="small"
+              style="margin-right: 5px;"
             >
-              {{ getRoleText(scope.row.userRole) }}
+              {{ role.roleName }}
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="status" label="状态" width="80">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'" size="small">
+              {{ scope.row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180" />
 
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
-            <el-button type="primary" size="small" :icon="EditPen" @click="editUser(scope.row)">修 改</el-button>
-            <el-button type="danger" size="small" :icon="Delete" @click="deleteUser(scope.row)">删 除</el-button>
+            <el-button type="primary" size="small" @click="editUser(scope.row)">编辑</el-button>
+            <el-button
+              :type="scope.row.status === 1 ? 'warning' : 'success'"
+              size="small"
+              @click="toggleUserStatus(scope.row)"
+            >
+              {{ scope.row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-button type="danger" size="small" @click="deleteUser(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页组件 -->
-      <div class="pagination-container" v-if="userList.length > 0">
-        <Page :psize="pageSize" :total="total" @setCurrentPageNo="setCurrentPageNo"></Page>
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[8, 16, 24, 32]"
+          :small="false"
+          :disabled="false"
+          :background="true"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
       </div>
     </div>
   </div>

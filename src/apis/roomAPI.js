@@ -2,11 +2,19 @@ import { roomHttpInstance } from "@/utils/request";
 
 // ==================== 房间列表相关接口 ====================
 
-//查询分页房间列表 - 按照API文档要求调整
+//查询分页房间列表 - 使用RBAC版本API
 export function getPagedRoomsListAPI(pageNo = 1){
      return roomHttpInstance({
-        url:`room/list?pageNo=${pageNo}`
+        url:`room/rbac/accessible`
      })
+}
+
+//根据状态获取当前用户可访问的房间列表 - 新增RBAC接口
+export function getRoomsByStatusRbacAPI(roomStatus){
+   return roomHttpInstance({
+      url:`room/rbac/accessible/status/${roomStatus}`,
+      method:'GET'
+   })
 }
 
 // 根据房间类型获取房间列表

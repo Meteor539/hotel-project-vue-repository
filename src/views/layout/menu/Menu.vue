@@ -39,6 +39,15 @@
           <el-menu-item index="/user/add" style="display: none;">新增用户</el-menu-item>
           <el-menu-item index="/user/admin">管理员</el-menu-item>
         </el-sub-menu>
+        <el-sub-menu index="4" v-if="userStore.hasAnyPermission(['sysuser:read', 'role:read', 'permission:read'])">
+          <template #title>
+            <el-icon><Setting /></el-icon>
+            <span>系统管理</span>
+          </template>
+          <el-menu-item index="/system/user/list" v-if="userStore.hasPermission('sysuser:read')">系统用户</el-menu-item>
+          <el-menu-item index="/system/role/list" v-if="userStore.hasPermission('role:read')">角色管理</el-menu-item>
+          <el-menu-item index="/system/permission/list" v-if="userStore.hasPermission('permission:read')">权限管理</el-menu-item>
+        </el-sub-menu>
       </el-menu>
 </template>
 
@@ -48,7 +57,11 @@ import {
   Shop,
   House,
   Avatar,
+  Setting,
 } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const props = defineProps(['isCollapse'])
 

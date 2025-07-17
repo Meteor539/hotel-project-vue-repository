@@ -33,10 +33,18 @@ export function deleteBranchAPI(id){
    })
 }
 
-//查询所有分店列表（用于下拉选择） - 根据API文档调整
+//查询所有分店列表（用于下拉选择） - 使用RBAC版本API
 export function getAllBranchesAPI(){
    return httpInstance({
-      url:'branch/list?pageNo=1',
+      url:'branch/rbac/accessible',
+      method:'GET'
+   })
+}
+
+//获取当前用户所属分店信息 - 新增RBAC接口
+export function getMyBranchAPI(){
+   return httpInstance({
+      url:'branch/rbac/my-branch',
       method:'GET'
    })
 }

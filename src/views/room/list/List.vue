@@ -102,13 +102,16 @@ import {
   deleteRoomAPI,
   getRoomsByTypeAPI,
   getRoomsByStatusAPI,
-  getRoomsByBranchIdAPI
+  getRoomsByBranchIdAPI,
+  getRoomsByStatusRbacAPI
 } from '@/apis/roomAPI'
 import { getAllBranchesAPI } from '@/apis/branchAPI'
+import { useUserStore } from '@/stores/user'
 import Page from '@/components/Page.vue'
 
 // 路由实例
 const router = useRouter()
+const userStore = useUserStore()
 
 // 搜索表单数据
 const searchForm = reactive({
@@ -153,11 +156,21 @@ const handleReset = () => {
 
 // 新增房间 - 跳转到add页面
 const handleAdd = () => {
+  // 检查权限
+  if (!userStore.hasPermission('room:create')) {
+    ElMessage.error('您没有新增房间的权限')
+    return
+  }
   router.push('/room/add')
 }
 
 // 编辑房间 - 跳转到add页面并传递编辑数据
 const handleEdit = (row) => {
+  // 检查权限
+  if (!userStore.hasPermission('room:update')) {
+    ElMessage.error('您没有编辑房间的权限')
+    return
+  }
   router.push({
     path: '/room/add',
     query: {
@@ -169,6 +182,12 @@ const handleEdit = (row) => {
 
 // 删除房间
 const handleDelete = async (row) => {
+  // 检查权限
+  if (!userStore.hasPermission('room:delete')) {
+    ElMessage.error('您没有删除房间的权限')
+    return
+  }
+
   try {
     await ElMessageBox.confirm(
       `您确定要删除房间"${row.roomNumber}"吗？删除后将无法恢复，请谨慎操作。`,
@@ -451,16 +470,17 @@ const handleSearchResultData = (res) => {
   }
 }
 
-// 加载分页房间数据
+// 加载分页房间数据 - 使用RBAC版本API
 const loadPagedRooms = async (pageNo, size = pageSize.value) => {
   try {
     loading.value = true;
 
+    // 使用RBAC版本的API获取用户可访问的房间列表
     let res = await getPagedRoomsListAPI(pageNo);
 
     if (res && res.data) {
-      // 处理真实API数据
-      handleRealApiData(res, size);
+      // 处理RBAC API数据 - 直接返回房间数组，需要手动分页
+      handleRbacApiData(res, pageNo, size);
     } else {
       ElMessage.error('获取房间列表失败')
     }
@@ -586,6 +606,66 @@ onActivated(async () => {
   await loadBranches()
   loadPagedRooms(currPageNo.value, pageSize.value)
 })
+
+// 处理RBAC API数据 - 手动分页
+const handleRbacApiData = (res, pageNo, size) => {
+  if (res.code === 1 || res.code === 200 || res.code === 0) {
+    // RBAC API直接返回房间数组
+    const allRooms = res.data || [];
+
+    // 手动计算分页
+    const start = (pageNo - 1) * size;
+    const end = start + size;
+
+    // 设置总数和当前页
+    total.value = allRooms.length;
+    currPageNo.value = pageNo;
+
+    // 获取当前页的数据
+    const currentPageData = allRooms.slice(start, end);
+
+    // 处理房间数据，确保字段名一致
+    const formattedRecords = currentPageData.map(room => {
+      const formattedRoom = {
+        id: room.id || room.roomId || room.room_id,
+        roomNumber: room.roomNumber || room.roomNo || room.room_no,
+        branchId: room.branchId || room.branch_id,
+        branchName: room.branchName || room.branch_name || '未知分店',
+        roomType: room.roomType || room.room_type,
+        facilities: room.facilities || room.roomFacilities || room.room_facilities || '',
+        status: room.status || room.roomStatus || room.room_status,
+        remark: room.remark || room.roomRemark || room.room_remark || '',
+        createTime: room.createTime || room.createdTime || room.createDate || room.create_time
+      };
+
+      // 格式化日期时间
+      if (formattedRoom.createTime) {
+        const date = new Date(formattedRoom.createTime);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        formattedRoom.createTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      }
+
+      return formattedRoom;
+    });
+
+    // 应用搜索过滤
+    const filteredRecords = applySearchFilter(formattedRecords);
+    roomList.value = filteredRecords;
+
+    // 如果有搜索条件，使用过滤后的数量；否则使用总数
+    const hasSearchConditions = searchForm.roomNumber || searchForm.branchId || searchForm.roomType || searchForm.status;
+    if (hasSearchConditions) {
+      total.value = filteredRecords.length;
+    }
+  } else {
+    ElMessage.error(res.msg || '获取房间列表失败');
+  }
+}
 </script>
 
 <style scoped>
