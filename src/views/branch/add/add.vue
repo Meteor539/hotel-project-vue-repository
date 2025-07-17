@@ -16,7 +16,12 @@
           <el-input-number v-model="formData.roomCount" :min="1" :precision="0" :controls-position="'right'" />
         </el-form-item>
         <el-form-item label="分店照片" prop="photo">
-          <UploadImage v-model="formData.photoList" @change="handlePhotoChange" />
+          <BranchUploadImage
+            v-model="formData.photoList"
+            :initial-images="formData.photoList"
+            :max-count="5"
+            @change="handlePhotoChange"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSubmit">{{ isEdit ? '更 新' : '新 增' }}</el-button>
@@ -33,7 +38,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { addBranchAPI, updateBranchAPI, getBranchByIdAPI } from '@/apis/branchAPI'
 import { createPhoneRules } from '@/utils/validators'
-import UploadImage from '@/components/UploadImage.vue'
+import BranchUploadImage from '@/components/BranchUploadImage.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -156,15 +161,42 @@ const loadBranchDetail = async (id) => {
       formData.roomCount = branchData.roomCount
       formData.photo = branchData.branchPicUrl || ''
 
+      // 处理照片回显 - 将逗号分隔的URL字符串拆分为数组
+      if (branchData.branchPicUrl) {
+        console.log('原始照片URL字符串:', branchData.branchPicUrl)
+        formData.photoList = branchData.branchPicUrl.split(',').filter(url => url.trim())
+        console.log('拆分后的照片数组:', formData.photoList)
+      } else {
+        formData.photoList = []
+      }
+
       console.log('映射后的表单数据:', formData)
       ElMessage.success('分店信息加载成功')
     } else if (res && res.code === 200 && res.data) {
       // 如果响应结构是 { code: 200, data: {...} }
-      Object.assign(formData, res.data)
+      const branchData = res.data
+      Object.assign(formData, branchData)
+
+      // 处理照片回显 - 将逗号分隔的URL字符串拆分为数组
+      if (branchData.branchPicUrl) {
+        formData.photoList = branchData.branchPicUrl.split(',').filter(url => url.trim())
+      } else {
+        formData.photoList = []
+      }
+
       console.log('加载的分店数据:', res.data)
     } else if (res && res.data && res.data.code === 200) {
       // 如果响应结构是 { data: { code: 200, data: {...} } }
-      Object.assign(formData, res.data.data)
+      const branchData = res.data.data
+      Object.assign(formData, branchData)
+
+      // 处理照片回显 - 将逗号分隔的URL字符串拆分为数组
+      if (branchData.branchPicUrl) {
+        formData.photoList = branchData.branchPicUrl.split(',').filter(url => url.trim())
+      } else {
+        formData.photoList = []
+      }
+
       console.log('加载的分店数据:', res.data.data)
     } else {
       console.error('API响应格式异常:', res)
@@ -178,10 +210,21 @@ const loadBranchDetail = async (id) => {
 
 // 处理照片变化
 const handlePhotoChange = (photoUrls) => {
-  // TODO: 根据后端接口要求处理照片数据
-  // 目前将第一张照片作为主照片存储到 photo 字段
-  formData.photo = photoUrls.length > 0 ? photoUrls[0] : ''
-  console.log('照片列表更新:', photoUrls)
+  // 更新照片列表
+  formData.photoList = photoUrls
+
+  // 将URL转换为相对路径（去掉域名部分），然后用逗号连接
+  const relativePaths = photoUrls.map(url => {
+    if (url.startsWith('http://localhost:4000')) {
+      return url.replace('http://localhost:4000', '')
+    }
+    return url // 如果已经是相对路径，直接返回
+  })
+
+  formData.photo = relativePaths.length > 0 ? relativePaths.join(',') : ''
+  console.log('分店照片列表更新:', photoUrls)
+  console.log('相对路径数组:', relativePaths)
+  console.log('存储的照片URL字符串:', formData.photo)
 }
 
 // 页面初始化

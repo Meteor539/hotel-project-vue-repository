@@ -6,7 +6,9 @@
     :on-preview="handlePictureCardPreview"
     :on-remove="handleRemove"
     :on-success="handleSuccess"
+    :on-error="handleError"
     :before-upload="beforeUpload"
+    name="file"
   >
     <el-icon><Plus /></el-icon>
   </el-upload>
@@ -36,8 +38,8 @@ const props = defineProps({
 // 定义 emits
 const emit = defineEmits(['update:modelValue', 'change'])
 
-// 上传文件的URL - 由于后端接口未完成，使用占位符
-const uploadFileUrl = ref('http://localhost:4000/api/file/upload') // TODO: 替换为实际的上传接口
+// 上传文件的URL - 使用相对路径，通过vite代理转发到后端
+const uploadFileUrl = ref('/file/upload')
 
 const fileList = ref([])
 const dialogImageUrl = ref('')
@@ -62,21 +64,42 @@ const beforeUpload = (file) => {
 
 // 文件上传成功的钩子
 const handleSuccess = (response, uploadFile) => {
-  // TODO: 根据实际后端接口返回格式处理
   console.log('上传成功:', response)
-  
-  // 占位符实现 - 模拟成功响应
-  const imageUrl = response?.data || URL.createObjectURL(uploadFile.raw)
-  
-  // 更新文件列表
-  const newFileList = [...fileList.value]
-  const currentUrls = newFileList.map(file => file.url || file.response?.data)
-  
-  // 发送图片URL给父组件
-  emit('update:modelValue', [...currentUrls, imageUrl])
-  emit('change', [...currentUrls, imageUrl])
-  
-  ElMessage.success('图片上传成功!')
+
+  // 根据后端返回格式，只要有data字段且不为null就认为上传成功
+  if (response && response.data && response.data !== null) {
+    const imageUrl = response.data
+
+    // 更新文件列表
+    const newFileList = [...fileList.value]
+    const currentUrls = newFileList.map(file => file.url || file.response?.data)
+
+    // 发送图片URL给父组件
+    emit('update:modelValue', [...currentUrls, imageUrl])
+    emit('change', [...currentUrls, imageUrl])
+
+    ElMessage.success('图片上传成功!')
+  } else {
+    console.error('上传失败，响应数据:', response)
+    ElMessage.error('图片上传失败，请重试')
+    // 移除上传失败的文件
+    const index = fileList.value.findIndex(file => file.uid === uploadFile.uid)
+    if (index > -1) {
+      fileList.value.splice(index, 1)
+    }
+  }
+}
+
+// 文件上传失败的钩子
+const handleError = (error, uploadFile) => {
+  console.error('上传失败:', error)
+  ElMessage.error('图片上传失败，请重试')
+
+  // 移除上传失败的文件
+  const index = fileList.value.findIndex(file => file.uid === uploadFile.uid)
+  if (index > -1) {
+    fileList.value.splice(index, 1)
+  }
 }
 
 // 文件移除的钩子

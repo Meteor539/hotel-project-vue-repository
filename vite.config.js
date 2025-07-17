@@ -31,6 +31,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false
       },
+      '/file': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        secure: false
+      },
       '/room-api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
